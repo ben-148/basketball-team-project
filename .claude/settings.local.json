@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(brew services *)",
+      "Bash(nohup mongod --dbpath /private/tmp/claude-501/-Users-benoved-Desktop-basketball-team-project/f9e02962-b4c6-4c1f-93a3-7e7b135939ac/scratchpad/mongodata --port 27017 --logpath /private/tmp/claude-501/-Users-benoved-Desktop-basketball-team-project/f9e02962-b4c6-4c1f-93a3-7e7b135939ac/scratchpad/mongod.log --fork)",
+      "Bash(npm run *)",
+      "Bash(nohup npm run dev)",
+      "Bash(disown)",
+      "Bash(pkill -f \"concurrently\")",
+      "Bash(pkill -f \"nodemon index.js\")",
+      "Bash(pkill -f \"vite\")",
+      "Bash(curl -s http://localhost:5050/api/health)",
+      "Bash(curl -s http://localhost:5050/api/players)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(python3 -m json.tool)"
+    ]
+  }
+}
