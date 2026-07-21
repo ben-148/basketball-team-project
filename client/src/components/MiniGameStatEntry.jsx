@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import { TEAMS, BENCH, STAT_FIELDS, MAX_TEAM_SIZE } from '../constants.js';
+import { toastSuccess, toastError, toastWarning, toastInfo, toastConfirm } from '../utils/toast.jsx';
 
 export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
   const [teams, setTeams] = useState({ [TEAMS[0]]: [], [TEAMS[1]]: [], [BENCH]: [] });
@@ -34,6 +35,7 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
       const key = `${playerId}-${team}`;
       setShakeKey(key);
       setTimeout(() => setShakeKey((k) => (k === key ? null : k)), 400);
+      toastWarning(`${team} is full (max ${MAX_TEAM_SIZE} players)`);
       return;
     }
     handleAssign(playerId, team);
@@ -54,7 +56,8 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
   }
 
   async function handleUnassign(playerId) {
-    if (!confirm('Remove this player from the mini-game?')) return;
+    const confirmed = await toastConfirm('Remove this player from the mini-game?');
+    if (!confirmed) return;
     setError('');
     setBusyKey(`unassign-${playerId}`);
     try {
@@ -63,6 +66,7 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
       loadRoster();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     } finally {
       setBusyKey(null);
     }
@@ -87,6 +91,7 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
       if (result.miniGameScore) setLiveScore(result.miniGameScore);
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
       loadRoster();
     } finally {
       setBusyKey(null);
@@ -94,16 +99,21 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
   }
 
   async function handleFinish() {
-    if (!confirm('Finish this mini-game? Stats will be locked and wins awarded to the winning team.')) return;
+    const confirmed = await toastConfirm(
+      'Finish this mini-game? Stats will be locked and wins awarded to the winning team.'
+    );
+    if (!confirmed) return;
     setError('');
     try {
       const result = await api.miniGames.finish(miniGame._id);
       setLiveScore({ raskoScore: result.miniGame.raskoScore, shoshanatScore: result.miniGame.shoshanatScore });
       setFinished(true);
       setCollapsed(true);
+      toastInfo('Mini-game finished');
       loadRoster();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 
@@ -118,16 +128,20 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
       loadRoster();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 
   async function handleDeleteMiniGame() {
-    if (!confirm('Delete this mini-game and all its stats?')) return;
+    const confirmed = await toastConfirm('Delete this mini-game and all its stats?');
+    if (!confirmed) return;
     try {
       await api.miniGames.remove(miniGame._id);
+      toastSuccess('Mini-game deleted');
       onDeleted();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client.js';
+import { toastSuccess, toastError, toastConfirm } from '../../utils/toast.jsx';
 
 const emptyForm = { name: '', age: '', dateOfBirth: '', photo: '', bio: '' };
 
@@ -38,23 +39,29 @@ export default function AdminPlayers() {
     try {
       if (editingId) {
         await api.players.update(editingId, payload);
+        toastSuccess('Player saved');
       } else {
         await api.players.create(payload);
+        toastSuccess('Player added');
       }
       resetForm();
       load();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this player? This also removes their stats.')) return;
+    const confirmed = await toastConfirm('Delete this player? This also removes their stats.');
+    if (!confirmed) return;
     try {
       await api.players.remove(id);
+      toastSuccess('Player deleted');
       load();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 

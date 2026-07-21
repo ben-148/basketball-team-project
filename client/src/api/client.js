@@ -13,6 +13,17 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+// For multipart/form-data uploads — no Content-Type header (the browser sets the boundary itself)
+// and no JSON body serialization.
+async function uploadRequest(path, formData) {
+  const res = await fetch(`${BASE_URL}${path}`, { method: 'POST', body: formData });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 export const api = {
   players: {
     list: () => request('/players'),
@@ -59,5 +70,19 @@ export const api = {
     create: (data) => request('/videos', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => request(`/videos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id) => request(`/videos/${id}`, { method: 'DELETE' }),
+  },
+  import: {
+    extract: (file) => {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      return uploadRequest('/import/extract', formData);
+    },
+    checkDate: (date) => request(`/import/check-date?date=${encodeURIComponent(date)}`),
+    confirm: (date, rows) =>
+      request('/import/confirm', { method: 'POST', body: JSON.stringify({ date, rows }) }),
+    listAliases: () => request('/import/aliases'),
+    addAlias: (alias, playerId) =>
+      request('/import/aliases', { method: 'POST', body: JSON.stringify({ alias, playerId }) }),
+    removeAlias: (id) => request(`/import/aliases/${id}`, { method: 'DELETE' }),
   },
 };

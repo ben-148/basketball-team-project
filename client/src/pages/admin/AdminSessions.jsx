@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client.js';
 import { formatDate } from '../../utils/date.js';
+import { toastSuccess, toastError, toastInfo, toastConfirm } from '../../utils/toast.jsx';
 
 const emptyForm = { date: '', notes: '', roster: [] };
 
@@ -48,23 +49,29 @@ export default function AdminSessions() {
     try {
       if (editingId) {
         await api.sessions.update(editingId, form);
+        toastSuccess('Session saved');
       } else {
         await api.sessions.create(form);
+        toastInfo('Session created');
       }
       resetForm();
       load();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this session? This also removes all its mini-games and stats.')) return;
+    const confirmed = await toastConfirm('Delete this session? This also removes all its mini-games and stats.');
+    if (!confirmed) return;
     try {
       await api.sessions.remove(id);
+      toastSuccess('Session deleted');
       load();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client.js';
+import StatValue from '../components/StatValue.jsx';
 import { formatDate } from '../utils/date.js';
 import { STAT_FIELDS } from '../constants.js';
 
@@ -60,7 +61,9 @@ export default function LegacySessionDetail() {
                   <td>{row.player.name}</td>
                   <td>N/A</td>
                   {STAT_FIELDS.map(([field]) => (
-                    <td key={field}>{row.stats[field]}</td>
+                    <td key={field}>
+                      <StatValue value={row.stats[field]} />
+                    </td>
                   ))}
                 </tr>
               ))}

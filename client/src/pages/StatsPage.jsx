@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
+import StatValue from '../components/StatValue.jsx';
 import { STAT_FIELDS } from '../constants.js';
 import { useSortableTable } from '../hooks/useSortableTable.js';
 
@@ -66,7 +67,9 @@ export default function StatsPage() {
                     <Link to={`/players/${row.player._id}`}>{row.player.name}</Link>
                   </td>
                   {STAT_FIELDS.map(([field]) => (
-                    <td key={field}>{row.totals[field]}</td>
+                    <td key={field}>
+                      <StatValue value={row.totals[field]} />
+                    </td>
                   ))}
                   <td>{row.gamesPlayed}</td>
                   <td>{row.benchCount}</td>

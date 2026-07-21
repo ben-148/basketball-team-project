@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
 import Home from './pages/Home.jsx';
@@ -13,10 +14,16 @@ import AdminPlayers from './pages/admin/AdminPlayers.jsx';
 import AdminSessions from './pages/admin/AdminSessions.jsx';
 import AdminSessionDetail from './pages/admin/AdminSessionDetail.jsx';
 import AdminVideos from './pages/admin/AdminVideos.jsx';
+import AdminImport from './pages/admin/AdminImport.jsx';
 
 export default function App() {
   return (
     <>
+      <Toaster
+        position="top-right"
+        toastOptions={{ duration: 3500, className: 'app-toast' }}
+        containerStyle={{ top: 84 }}
+      />
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -39,6 +46,7 @@ export default function App() {
           <Route path="sessions" element={<AdminSessions />} />
           <Route path="sessions/:sessionId" element={<AdminSessionDetail />} />
           <Route path="videos" element={<AdminVideos />} />
+          <Route path="import" element={<AdminImport />} />
         </Route>
       </Routes>
     </>

@@ -14,6 +14,9 @@ export default function AdminLayout() {
         <NavLink to="/admin/videos" className={({ isActive }) => (isActive ? 'active' : '')}>
           Videos
         </NavLink>
+        <NavLink to="/admin/import" className={({ isActive }) => (isActive ? 'active' : '')}>
+          Import
+        </NavLink>
       </div>
       <div className="admin-content">
         <Outlet />

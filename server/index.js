@@ -9,6 +9,7 @@ import videosRouter from './routes/videos.js';
 import sessionsRouter from './routes/sessions.js';
 import miniGamesRouter from './routes/miniGames.js';
 import miniGameStatsRouter from './routes/miniGameStats.js';
+import importRouter from './routes/import.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api/videos', videosRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/minigames', miniGamesRouter);
 app.use('/api/mini-game-stats', miniGameStatsRouter);
+app.use('/api/import', importRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

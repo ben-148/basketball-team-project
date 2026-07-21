@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client.js';
+import { toastSuccess, toastError, toastConfirm } from '../../utils/toast.jsx';
 
 const emptyForm = { title: '', youtubeUrl: '', description: '', player: '' };
 
@@ -39,23 +40,29 @@ export default function AdminVideos() {
     try {
       if (editingId) {
         await api.videos.update(editingId, payload);
+        toastSuccess('Video saved');
       } else {
         await api.videos.create(payload);
+        toastSuccess('Video added');
       }
       resetForm();
       load();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this video?')) return;
+    const confirmed = await toastConfirm('Delete this video?');
+    if (!confirmed) return;
     try {
       await api.videos.remove(id);
+      toastSuccess('Video deleted');
       load();
     } catch (err) {
       setError(err.message);
+      toastError(err.message);
     }
   }
 

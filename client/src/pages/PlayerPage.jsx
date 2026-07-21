@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import VideoCard from '../components/VideoCard.jsx';
+import StatValue from '../components/StatValue.jsx';
 import { STAT_FIELDS as STAT_LABELS, BENCH } from '../constants.js';
 import { formatDate } from '../utils/date.js';
 
@@ -54,7 +55,9 @@ export default function PlayerPage() {
         <div className="stat-grid">
           {STAT_LABELS.map(([field, label]) => (
             <div key={field} className="stat-tile">
-              <div className="stat-value">{lifetime[field]}</div>
+              <div className="stat-value">
+                <StatValue value={lifetime[field]} />
+              </div>
               <div className="stat-label">{label}</div>
             </div>
           ))}
@@ -95,7 +98,9 @@ export default function PlayerPage() {
                         {row.raskoScore}-{row.shoshanatScore}
                       </td>
                       {STAT_LABELS.map(([field]) => (
-                        <td key={field}>{row[field]}</td>
+                        <td key={field}>
+                          <StatValue value={row[field]} />
+                        </td>
                       ))}
                     </tr>
                   );

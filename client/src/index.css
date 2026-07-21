@@ -1178,3 +1178,142 @@ label.roster-checkbox {
   padding: 0 0.6rem;
   font-size: 0.95rem;
 }
+
+/* ---------- PDF import ---------- */
+
+.import-date-row {
+  margin-bottom: 1.5rem;
+}
+
+.import-stat-input {
+  width: 64px;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-alt);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+tr.row-status-exact {
+  background: rgba(56, 200, 120, 0.12);
+}
+
+tr.row-status-exact:hover {
+  background: rgba(56, 200, 120, 0.18);
+}
+
+tr.row-status-alias {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+tr.row-status-alias:hover {
+  background: rgba(255, 215, 0, 0.16);
+}
+
+tr.row-status-none {
+  background: rgba(255, 77, 109, 0.1);
+}
+
+tr.row-status-none:hover {
+  background: rgba(255, 77, 109, 0.16);
+}
+
+.alias-management {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.alias-add-form {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.alias-add-form input,
+.alias-add-form select {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-alt);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.unmatched-row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 220px;
+}
+
+.new-player-inline {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.new-player-inline input {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-alt);
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.stat-na {
+  color: var(--color-text-dim);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.missing-columns-note {
+  color: var(--color-accent);
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* ---------- Toast Notifications ---------- */
+.app-toast-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-primary-light);
+  border-inline-start: 4px solid var(--color-primary-light);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  min-width: 260px;
+  max-width: 380px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.app-toast-confirm.app-toast-leave {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.app-toast-confirm-message {
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.app-toast-confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

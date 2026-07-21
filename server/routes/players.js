@@ -3,7 +3,8 @@ import Player from '../models/Player.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
 import PlayerMiniGameStats from '../models/PlayerMiniGameStats.js';
 import Video from '../models/Video.js';
-import { STAT_FIELDS, BENCH } from '../constants.js';
+import { BENCH } from '../constants.js';
+import { createStatTotals } from '../utils/statTotals.js';
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/leaderboard', async (req, res) => {
       p._id.toString(),
       {
         player: p,
-        totals: STAT_FIELDS.reduce((acc, f) => ({ ...acc, [f]: 0 }), {}),
+        statTotals: createStatTotals(),
         gamesPlayed: 0,
         benchCount: 0,
       },
@@ -38,7 +39,7 @@ router.get('/leaderboard', async (req, res) => {
     const row = rowsByPlayer.get(s.player.toString());
     if (!row) continue;
     row.gamesPlayed += 1;
-    for (const f of STAT_FIELDS) row.totals[f] += s[f];
+    row.statTotals.add(s);
   }
 
   for (const s of miniGameDocs) {
@@ -50,10 +51,17 @@ router.get('/leaderboard', async (req, res) => {
       continue;
     }
     row.gamesPlayed += 1;
-    for (const f of STAT_FIELDS) row.totals[f] += s[f];
+    row.statTotals.add(s);
   }
 
-  res.json(Array.from(rowsByPlayer.values()));
+  res.json(
+    Array.from(rowsByPlayer.values()).map((row) => ({
+      player: row.player,
+      totals: row.statTotals.finalize(row.gamesPlayed),
+      gamesPlayed: row.gamesPlayed,
+      benchCount: row.benchCount,
+    }))
+  );
 });
 
 router.get('/:id', async (req, res) => {
@@ -105,7 +113,7 @@ router.get('/:id', async (req, res) => {
 
   const gameLog = [...legacyRows, ...miniGameRows].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  const lifetime = STAT_FIELDS.reduce((acc, f) => ({ ...acc, [f]: 0 }), {});
+  const statTotals = createStatTotals();
   let gamesPlayed = 0;
   let benchCount = 0;
   for (const row of gameLog) {
@@ -114,8 +122,9 @@ router.get('/:id', async (req, res) => {
       continue;
     }
     gamesPlayed += 1;
-    for (const f of STAT_FIELDS) lifetime[f] += row[f];
+    statTotals.add(row);
   }
+  const lifetime = statTotals.finalize(gamesPlayed);
   lifetime.gamesPlayed = gamesPlayed;
   lifetime.benchCount = benchCount;
 
