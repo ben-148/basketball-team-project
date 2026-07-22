@@ -695,13 +695,13 @@ tbody tr:last-child td {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 2rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .unassigned-panel h3 {
-  margin: 0 0 1rem;
-  font-size: 1rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-accent);
@@ -710,7 +710,7 @@ tbody tr:last-child td {
 .unassigned-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.4rem;
 }
 
 .unassigned-chip {
@@ -718,10 +718,10 @@ tbody tr:last-child td {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.6rem 0.9rem;
+  gap: 0.5rem;
+  padding: 0.35rem 0.65rem;
   background: var(--color-surface-alt);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .unassigned-chip span {
@@ -737,7 +737,7 @@ tbody tr:last-child td {
 .stat-entry-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 @media (max-width: 900px) {
@@ -765,32 +765,48 @@ tbody tr:last-child td {
   font-style: italic;
 }
 
-.stat-entry-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
+.stat-entry-compact-table {
+  table-layout: fixed;
+  width: 100%;
 }
 
-.stat-entry-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
+.stat-entry-compact-table th,
+.stat-entry-compact-table td {
+  padding: 0.3rem 0.3rem;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  overflow: hidden;
 }
 
-.stat-entry-card-header {
+.stat-entry-compact-table th:first-child,
+.stat-entry-compact-table td:first-child {
+  width: 112px;
+}
+
+.stat-entry-compact-table th:last-child,
+.stat-entry-compact-table td:last-child {
+  width: 22px;
+}
+
+.stat-entry-player-cell {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-border);
+  gap: 0.4rem;
+  font-weight: 700;
 }
 
-.stat-entry-card-header h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  flex: 1;
+.stat-entry-player-cell span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.stat-entry-photo-sm {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .stat-entry-remove {
@@ -809,30 +825,20 @@ tbody tr:last-child td {
   background: rgba(255, 77, 109, 0.12);
 }
 
-.stat-entry-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.stat-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.stat-row-label {
-  color: var(--color-text-muted);
-  font-weight: 700;
-  font-size: 0.85rem;
-  min-width: 5rem;
+.stat-entry-remove-sm {
+  font-size: 1.1rem;
+  padding: 0 0.3rem;
 }
 
 .stat-counter {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+}
+
+.stat-counter-sm {
+  gap: 0.2rem;
+  justify-content: center;
 }
 
 .stat-counter-btn {
@@ -887,10 +893,16 @@ tbody tr:last-child td {
   font-size: 1.15rem;
 }
 
-@media (max-width: 600px) {
-  .stat-entry-grid {
-    grid-template-columns: 1fr;
-  }
+.stat-counter-btn-sm {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  font-size: 0.8rem;
+}
+
+.stat-counter-value-sm {
+  min-width: 1.3ch;
+  font-size: 0.85rem;
 }
 
 .truncate {
@@ -1137,16 +1149,6 @@ tbody tr:last-child td {
   opacity: 0.75;
 }
 
-.stat-entry-team-switch {
-  margin-bottom: 1rem;
-}
-
-.bench-row-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .compact-table th,
 .compact-table td {
   padding: 0.5rem 0.55rem;
@@ -1309,12 +1311,12 @@ label.roster-checkbox {
   margin-left: auto;
 }
 
-.stat-counter-plus-wide {
+.stat-counter-plus-wide-sm {
   width: auto;
-  min-width: 44px;
-  border-radius: 20px;
-  padding: 0 0.6rem;
-  font-size: 0.95rem;
+  min-width: 30px;
+  border-radius: 14px;
+  padding: 0 0.45rem;
+  font-size: 0.75rem;
 }
 
 /* ---------- PDF import ---------- */

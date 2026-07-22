@@ -12,32 +12,20 @@ export default function MiniGameTeamPills({ raskoScore, shoshanatScore, teams })
   const shoshanatNames = names(teams[TEAMS[1]]);
   const benchNames = names(teams[BENCH]);
 
-  const winningNames = winner === TEAMS[0] ? raskoNames : winner === TEAMS[1] ? shoshanatNames : null;
-  const losingNames = winner === TEAMS[0] ? shoshanatNames : winner === TEAMS[1] ? raskoNames : null;
+  const raskoIsWinner = winner === TEAMS[0];
+  const shoshanatIsWinner = winner === TEAMS[1];
 
   return (
     <>
-      {winner ? (
-        <>
-          <div className="minigame-summary-pill minigame-summary-pill-winning">
-            🏆 <bdi>{winningNames.join(' · ')}</bdi>
-          </div>
-          <span className="minigame-summary-vs">vs</span>
-          <div className="minigame-summary-pill minigame-summary-pill-losing">
-            <bdi>{losingNames.join(' · ')}</bdi>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="minigame-summary-pill minigame-summary-pill-losing">
-            <bdi>{raskoNames.join(' · ')}</bdi>
-          </div>
-          <span className="minigame-summary-vs">vs</span>
-          <div className="minigame-summary-pill minigame-summary-pill-losing">
-            <bdi>{shoshanatNames.join(' · ')}</bdi>
-          </div>
-        </>
-      )}
+      <div className={`minigame-summary-pill ${raskoIsWinner ? 'minigame-summary-pill-winning' : 'minigame-summary-pill-losing'}`}>
+        {raskoIsWinner && '🏆 '}
+        <bdi>{raskoNames.join(' · ')}</bdi>
+      </div>
+      <span className="minigame-summary-vs">vs</span>
+      <div className={`minigame-summary-pill ${shoshanatIsWinner ? 'minigame-summary-pill-winning' : 'minigame-summary-pill-losing'}`}>
+        {shoshanatIsWinner && '🏆 '}
+        <bdi>{shoshanatNames.join(' · ')}</bdi>
+      </div>
       {benchNames.length > 0 && (
         <div className="minigame-summary-bench-chip">
           🪑 <bdi>{benchNames.join(' · ')}</bdi>

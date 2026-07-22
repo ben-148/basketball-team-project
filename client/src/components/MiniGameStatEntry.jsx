@@ -400,78 +400,76 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
             {teams[team].length === 0 ? (
               <p className="team-column-empty">No players assigned yet.</p>
             ) : (
-              <div className="stat-entry-grid">
-                {teams[team].map((row) => (
-                  <div key={row.player._id} className="stat-entry-card">
-                    <div className="stat-entry-card-header">
-                      <img
-                        src={row.player.photo || "https://placehold.co/60x60"}
-                        alt={row.player.name}
-                        className="admin-thumb"
-                      />
-                      <h3>{row.player.name}</h3>
-                      <button
-                        type="button"
-                        className="stat-entry-remove"
-                        disabled={busyKey === `unassign-${row.player._id}`}
-                        onClick={() => handleUnassign(row.player._id)}
-                        aria-label={`Remove ${row.player.name} from mini-game`}
-                      >
-                        &times;
-                      </button>
-                    </div>
-                    <div className="stat-entry-team-switch">
-                      {renderTeamButtons(row.player._id, team)}
-                    </div>
-                    <div className="stat-entry-rows">
-                      {STAT_FIELDS.map(([field, label]) => {
-                        const plusDelta = field === "points" ? 2 : 1;
-                        const plusLabel = field === "points" ? "+2" : "+";
-                        return (
-                          <div key={field} className="stat-row">
-                            <span className="stat-row-label">{label}</span>
-                            <div className="stat-counter">
-                              <button
-                                type="button"
-                                className="stat-counter-btn stat-counter-minus"
-                                disabled={finishing}
-                                onClick={() =>
-                                  handleAdjust(row.player._id, team, field, -1)
-                                }
-                                aria-label={`Decrease ${label} for ${row.player.name}`}
-                              >
-                                &minus;
-                              </button>
-                              <span className="stat-counter-value">
-                                {row.stats[field]}
-                              </span>
-                              <button
-                                type="button"
-                                className={`stat-counter-btn stat-counter-plus ${
-                                  field === "points"
-                                    ? "stat-counter-plus-wide"
-                                    : ""
-                                }`}
-                                disabled={finishing}
-                                onClick={() =>
-                                  handleAdjust(
-                                    row.player._id,
-                                    team,
-                                    field,
-                                    plusDelta,
-                                  )
-                                }
-                                aria-label={`Increase ${label} for ${row.player.name} by ${plusDelta}`}
-                              >
-                                {plusLabel}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+              <div className="table-wrap">
+                <table className="stat-entry-compact-table">
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      {MINIGAME_TABLE_FIELDS.map(([field, label]) => (
+                        <th key={field}>{label}</th>
+                      ))}
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teams[team].map((row) => (
+                      <tr key={row.player._id}>
+                        <td className="stat-entry-player-cell">
+                          <img
+                            src={row.player.photo || "https://placehold.co/60x60"}
+                            alt={row.player.name}
+                            className="stat-entry-photo-sm"
+                          />
+                          <span>{row.player.name}</span>
+                        </td>
+                        {MINIGAME_TABLE_FIELDS.map(([field, label]) => {
+                          const plusDelta = field === "points" ? 2 : 1;
+                          const plusLabel = field === "points" ? "+2" : "+";
+                          return (
+                            <td key={field}>
+                              <div className="stat-counter stat-counter-sm">
+                                <button
+                                  type="button"
+                                  className="stat-counter-btn stat-counter-btn-sm stat-counter-minus"
+                                  disabled={finishing}
+                                  onClick={() => handleAdjust(row.player._id, team, field, -1)}
+                                  aria-label={`Decrease ${label} for ${row.player.name}`}
+                                >
+                                  &minus;
+                                </button>
+                                <span className="stat-counter-value stat-counter-value-sm">
+                                  {row.stats[field]}
+                                </span>
+                                <button
+                                  type="button"
+                                  className={`stat-counter-btn stat-counter-btn-sm stat-counter-plus ${
+                                    field === "points" ? "stat-counter-plus-wide-sm" : ""
+                                  }`}
+                                  disabled={finishing}
+                                  onClick={() => handleAdjust(row.player._id, team, field, plusDelta)}
+                                  aria-label={`Increase ${label} for ${row.player.name} by ${plusDelta}`}
+                                >
+                                  {plusLabel}
+                                </button>
+                              </div>
+                            </td>
+                          );
+                        })}
+                        <td>
+                          <button
+                            type="button"
+                            className="stat-entry-remove stat-entry-remove-sm"
+                            disabled={busyKey === `unassign-${row.player._id}`}
+                            onClick={() => handleUnassign(row.player._id)}
+                            aria-label={`Remove ${row.player.name} from mini-game`}
+                          >
+                            &times;
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -479,27 +477,13 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
       </div>
 
       {teams[BENCH].length > 0 && (
-        <div className="unassigned-panel">
-          <h3>🪑 Bench</h3>
-          <div className="unassigned-list">
-            {teams[BENCH].map((p) => (
-              <div key={p.player._id} className="unassigned-chip">
-                <span>{p.player.name}</span>
-                <div className="bench-row-actions">
-                  {renderTeamButtons(p.player._id, BENCH)}
-                  <button
-                    type="button"
-                    className="stat-entry-remove"
-                    disabled={busyKey === `unassign-${p.player._id}`}
-                    onClick={() => handleUnassign(p.player._id)}
-                    aria-label={`Remove ${p.player.name} from bench`}
-                  >
-                    &times;
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="bench-row">
+          <span className="bench-row-label">🪑 Bench</span>
+          {teams[BENCH].map((p) => (
+            <span key={p.player._id} className="bench-chip">
+              {p.player.name}
+            </span>
+          ))}
         </div>
       )}
 
