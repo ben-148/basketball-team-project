@@ -59,10 +59,10 @@ export const api = {
       request('/mini-game-stats/assign', { method: 'POST', body: JSON.stringify({ playerId, miniGameId, team }) }),
     unassign: (playerId, miniGameId) =>
       request('/mini-game-stats/unassign', { method: 'POST', body: JSON.stringify({ playerId, miniGameId }) }),
-    increment: (playerId, miniGameId, field, delta) =>
-      request('/mini-game-stats/increment', {
+    save: (playerId, miniGameId, stats) =>
+      request('/mini-game-stats/save', {
         method: 'POST',
-        body: JSON.stringify({ playerId, miniGameId, field, delta }),
+        body: JSON.stringify({ playerId, miniGameId, stats }),
       }),
   },
   videos: {

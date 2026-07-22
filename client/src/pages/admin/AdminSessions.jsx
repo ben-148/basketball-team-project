@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client.js';
 import { formatDate } from '../../utils/date.js';
 import { toastSuccess, toastError, toastInfo, toastConfirm } from '../../utils/toast.jsx';
 
 const emptyForm = { date: '', notes: '', roster: [] };
+const MIN_ROSTER_SIZE = 6;
 
 export default function AdminSessions() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [players, setPlayers] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -50,12 +52,14 @@ export default function AdminSessions() {
       if (editingId) {
         await api.sessions.update(editingId, form);
         toastSuccess('Session saved');
+        resetForm();
+        load();
       } else {
-        await api.sessions.create(form);
+        const created = await api.sessions.create(form);
         toastInfo('Session created');
+        resetForm();
+        navigate(`/admin/sessions/${created._id}`);
       }
-      resetForm();
-      load();
     } catch (err) {
       setError(err.message);
       toastError(err.message);
@@ -93,6 +97,9 @@ export default function AdminSessions() {
               </label>
             ))}
           </div>
+          <p className={`roster-counter ${form.roster.length < MIN_ROSTER_SIZE ? 'roster-counter-low' : ''}`}>
+            נבחרו {form.roster.length} שחקנים (מינימום {MIN_ROSTER_SIZE})
+          </p>
         </label>
         <label>
           Date
@@ -104,7 +111,11 @@ export default function AdminSessions() {
         </label>
         {error && <p className="error-text">{error}</p>}
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!editingId && form.roster.length < MIN_ROSTER_SIZE}
+          >
             {editingId ? 'Save Changes' : 'Add Session'}
           </button>
           {editingId && (

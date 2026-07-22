@@ -146,22 +146,13 @@ router.post(
   })
 );
 
-// Increments (or decrements) a single stat field. Bench players can't accrue stats.
-// Changes to points immediately recompute the mini-game's team scores.
+// Writes a player's final stat values for a mini-game in one shot (replaces the old per-click
+// increment approach — the admin now tallies stats locally in the UI and this is called once per
+// player, right before finishing). Bench players can't accrue stats.
 router.post(
-  '/increment',
+  '/save',
   asyncHandler(async (req, res) => {
-    const { playerId, miniGameId, field, delta } = req.body;
-
-    if (!STAT_FIELDS.includes(field)) {
-      return res.status(400).json({ error: `Invalid field: ${field}` });
-    }
-
-    const allowedDeltas = field === 'points' ? [2, -1] : [1, -1];
-    const step = Number(delta);
-    if (!allowedDeltas.includes(step)) {
-      return res.status(400).json({ error: `Invalid delta for ${field}: ${delta}` });
-    }
+    const { playerId, miniGameId, stats } = req.body;
 
     const miniGame = await requireActiveMiniGame(miniGameId, res);
     if (!miniGame) return;
@@ -174,12 +165,16 @@ router.post(
       return res.status(400).json({ error: 'Cannot record stats for a bench player' });
     }
 
-    doc[field] = Math.max(0, doc[field] + step);
+    for (const field of STAT_FIELDS) {
+      if (stats && stats[field] !== undefined) {
+        doc[field] = Math.max(0, Number(stats[field]) || 0);
+      }
+    }
     await doc.save();
 
-    const miniGameScore = field === 'points' ? await recalcScore(miniGameId) : undefined;
+    const miniGameScore = await recalcScore(miniGameId);
 
-    res.json({ ...doc.toObject(), ...(miniGameScore ? { miniGameScore } : {}) });
+    res.json({ ...doc.toObject(), miniGameScore });
   })
 );
 
