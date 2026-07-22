@@ -1,4 +1,6 @@
+import crypto from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
+import { getCachedExtraction, setCachedExtraction } from './extractionCache.js';
 
 const SYSTEM_PROMPT = `You are a data extraction assistant for a basketball statistics app.
 Extract player statistics from the PDF table and return ONLY a JSON object, no other text.
@@ -54,7 +56,18 @@ function extractJsonPayload(text) {
   return cleaned;
 }
 
+function cacheKeyFor(pdfBuffer) {
+  return crypto.createHash('sha256').update(pdfBuffer).update(SYSTEM_PROMPT).digest('hex');
+}
+
 export async function extractStatsFromPdf(pdfBuffer) {
+  const cacheKey = cacheKeyFor(pdfBuffer);
+  const cached = await getCachedExtraction(cacheKey);
+  if (cached) {
+    console.log('[pdf-import] cache hit — skipping Claude API call, key:', cacheKey);
+    return { rows: cached.rows, missingColumns: cached.missingColumns };
+  }
+
   const base64Pdf = pdfBuffer.toString('base64');
 
   const response = await getClient().messages.create({
@@ -121,6 +134,8 @@ export async function extractStatsFromPdf(pdfBuffer) {
     }
     return clean;
   });
+
+  await setCachedExtraction(cacheKey, { rows, missingColumns });
 
   return { rows, missingColumns };
 }
