@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
@@ -41,7 +41,7 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route index element={<AdminPlayers />} />
+          <Route index element={<Navigate to="/admin/sessions" replace />} />
           <Route path="players" element={<AdminPlayers />} />
           <Route path="sessions" element={<AdminSessions />} />
           <Route path="sessions/:sessionId" element={<AdminSessionDetail />} />

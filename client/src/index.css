@@ -535,6 +535,20 @@ tbody tr:last-child td {
   letter-spacing: 0.04em;
 }
 
+.form .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-field-label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .form input,
 .form select,
 .form textarea {
@@ -1215,16 +1229,78 @@ label.roster-checkbox {
   padding: 1.1rem 1.5rem;
 }
 
-.minigame-collapsed-title {
+.minigame-summary-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.minigame-pills-standalone {
+  margin-bottom: 1.5rem;
+}
+
+.minigame-summary-title {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-accent);
+  white-space: nowrap;
 }
 
-.minigame-collapsed-winner {
+.minigame-summary-score {
+  font-weight: 900;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.minigame-summary-dot {
+  color: var(--color-text-dim);
+}
+
+.minigame-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.minigame-summary-pill-winning {
+  border: 1px solid var(--color-accent);
+  background: rgba(255, 215, 0, 0.12);
+  color: var(--color-accent);
+}
+
+.minigame-summary-pill-losing {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-alt);
   color: var(--color-text-muted);
+}
+
+.minigame-summary-vs {
+  color: var(--color-text-dim);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.minigame-summary-bench-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text-dim);
   font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .minigame-collapsed-actions {
@@ -1378,4 +1454,63 @@ tr.row-status-none:hover {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+}
+
+/* ---------- Player session log ---------- */
+
+.session-log-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.session-log-scroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface-alt);
+  z-index: 1;
+}
+
+.session-log-row {
+  cursor: pointer;
+}
+
+.session-log-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.session-log-arrow {
+  width: 1.75rem;
+  text-align: center;
+  color: var(--color-accent);
+  font-size: 0.75rem;
+}
+
+.session-log-detail-row td {
+  padding: 0;
+  background: var(--color-bg-alt);
+}
+
+.session-log-subtable {
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.session-log-subtable th,
+.session-log-subtable td {
+  padding: 0.55rem 1.5rem;
+  font-size: 0.85rem;
+}
+
+.session-log-subtable thead {
+  background: transparent;
+}
+
+.session-log-subtable th {
+  color: var(--color-text-dim);
+}
+
+.session-log-show-all {
+  margin-top: 1rem;
 }

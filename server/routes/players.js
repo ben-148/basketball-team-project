@@ -103,6 +103,7 @@ router.get('/:id', async (req, res) => {
       shoshanatScore: s.miniGame.shoshanatScore,
       sessionId: s.miniGame.session._id,
       miniGameId: s.miniGame._id,
+      miniGameCreatedAt: s.miniGame.createdAt,
       points: s.points,
       rebounds: s.rebounds,
       assists: s.assists,

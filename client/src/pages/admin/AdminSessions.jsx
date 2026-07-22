@@ -83,8 +83,8 @@ export default function AdminSessions() {
     <div>
       <h2>{editingId ? 'Edit Session' : 'Add Session'}</h2>
       <form className="form" onSubmit={handleSubmit}>
-        <label>
-          Who showed up tonight?
+        <div className="form-field">
+          <span className="form-field-label">Who showed up tonight?</span>
           <div className="roster-checklist">
             {players.map((p) => (
               <label key={p._id} className="roster-checkbox">
@@ -100,7 +100,7 @@ export default function AdminSessions() {
           <p className={`roster-counter ${form.roster.length < MIN_ROSTER_SIZE ? 'roster-counter-low' : ''}`}>
             נבחרו {form.roster.length} שחקנים (מינימום {MIN_ROSTER_SIZE})
           </p>
-        </label>
+        </div>
         <label>
           Date
           <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
