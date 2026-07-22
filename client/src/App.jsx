@@ -20,7 +20,7 @@ export default function App() {
   return (
     <>
       <Toaster
-        position="top-right"
+        position="top-center"
         toastOptions={{ duration: 3500, className: 'app-toast' }}
         containerStyle={{ top: 84 }}
       />

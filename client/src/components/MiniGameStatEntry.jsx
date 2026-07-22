@@ -56,13 +56,12 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
   }
 
   async function handleUnassign(playerId) {
-    const confirmed = await toastConfirm('Remove this player from the mini-game?');
-    if (!confirmed) return;
     setError('');
     setBusyKey(`unassign-${playerId}`);
     try {
       const result = await api.miniGameStats.unassign(playerId, miniGame._id);
       if (result.miniGameScore) setLiveScore(result.miniGameScore);
+      toastInfo('Player removed from mini-game');
       loadRoster();
     } catch (err) {
       setError(err.message);
@@ -99,10 +98,6 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
   }
 
   async function handleFinish() {
-    const confirmed = await toastConfirm(
-      'Finish this mini-game? Stats will be locked and wins awarded to the winning team.'
-    );
-    if (!confirmed) return;
     setError('');
     try {
       const result = await api.miniGames.finish(miniGame._id);
