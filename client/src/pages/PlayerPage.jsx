@@ -4,7 +4,7 @@ import { api } from '../api/client.js';
 import VideoCard from '../components/VideoCard.jsx';
 import StatValue from '../components/StatValue.jsx';
 import StatsTable from '../components/StatsTable.jsx';
-import { STAT_FIELDS as STAT_LABELS, BENCH } from '../constants.js';
+import { STAT_FIELDS as STAT_LABELS } from '../constants.js';
 import { formatDate } from '../utils/date.js';
 
 const SESSIONS_PAGE_SIZE = 10;
@@ -16,6 +16,16 @@ const SESSION_LOG_COLUMNS = [
   'steals',
   'turnovers',
   { key: 'gamesPlayed', label: 'Mini-Games' },
+  'wins',
+];
+const MINIGAME_BREAKDOWN_COLUMNS = [
+  'miniGameNumber',
+  'team',
+  'points',
+  'assists',
+  'rebounds',
+  'steals',
+  'turnovers',
   'wins',
 ];
 
@@ -52,30 +62,18 @@ function sumStats(rows) {
 
 function MiniGameBreakdown({ miniGames }) {
   const sorted = [...miniGames].sort((a, b) => new Date(a.miniGameCreatedAt) - new Date(b.miniGameCreatedAt));
-  return (
-    <table className="session-log-subtable">
-      <thead>
-        <tr>
-          <th>Mini-Game</th>
-          <th>Team</th>
-          {STAT_LABELS.map(([field, label]) => (
-            <th key={field}>{label}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {sorted.map((mg, i) => (
-          <tr key={mg.miniGameId}>
-            <td>#{i + 1}</td>
-            <td>{mg.team === BENCH ? '🪑 Bench' : mg.team}</td>
-            {STAT_LABELS.map(([field]) => (
-              <td key={field}>{mg[field]}</td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
+  const rows = sorted.map((mg, i) => ({
+    key: mg.miniGameId,
+    miniGameNumber: i + 1,
+    team: mg.team,
+    points: mg.points,
+    assists: mg.assists,
+    rebounds: mg.rebounds,
+    steals: mg.steals,
+    turnovers: mg.turnovers,
+    wins: mg.wins,
+  }));
+  return <StatsTable rows={rows} columns={MINIGAME_BREAKDOWN_COLUMNS} tableClassName="session-log-subtable" />;
 }
 
 export default function PlayerPage() {

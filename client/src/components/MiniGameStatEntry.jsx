@@ -482,6 +482,15 @@ export default function MiniGameStatEntry({ miniGame, index, onDeleted }) {
           {teams[BENCH].map((p) => (
             <span key={p.player._id} className="bench-chip">
               {p.player.name}
+              <button
+                type="button"
+                className="stat-entry-remove stat-entry-remove-sm"
+                disabled={busyKey === `unassign-${p.player._id}`}
+                onClick={() => handleUnassign(p.player._id)}
+                aria-label={`Remove ${p.player.name} from bench`}
+              >
+                &times;
+              </button>
             </span>
           ))}
         </div>

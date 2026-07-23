@@ -33,6 +33,11 @@ const COLUMN_DEFS = {
     getValue: (row) => row.team ?? '',
     render: (row) => (row.team === BENCH ? '🪑 Bench' : row.team || 'N/A'),
   },
+  miniGameNumber: {
+    label: 'Mini-Game',
+    getValue: (row) => row.miniGameNumber ?? 0,
+    render: (row) => `#${row.miniGameNumber}`,
+  },
   date: {
     label: 'Date',
     getValue: (row) => (row.date ? new Date(row.date).getTime() : 0),
