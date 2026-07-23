@@ -7,10 +7,96 @@ import { fileURLToPath } from 'url';
 import Player from '../models/Player.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
 import PlayerMiniGameStats from '../models/PlayerMiniGameStats.js';
+import MiniGame from '../models/MiniGame.js';
 import Video from '../models/Video.js';
 import { BENCH } from '../constants.js';
 import { createStatTotals } from '../utils/statTotals.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+
+// Categories eligible for a session-log leader indicator — matches the client's star (⭐) /
+// trophy (🏆) fields. Turnovers is intentionally excluded.
+const LEADER_FIELDS = ['points', 'rebounds', 'assists', 'steals', 'wins'];
+
+function emptyLeaderTotals() {
+  return Object.fromEntries(LEADER_FIELDS.map((f) => [f, 0]));
+}
+
+// For a set of session IDs, sums every participating player's stats per session (across all of
+// that session's mini-games) and returns which categories THIS player led — tied included, zero
+// leaders excluded. This is what makes the Session Log's leader badges reflect "best in that
+// session among everyone who played", not "best among this player's own sessions".
+async function computeSessionLeaderFields(playerId, sessionIds) {
+  const result = {};
+  if (sessionIds.length === 0) return result;
+
+  const miniGames = await MiniGame.find({ session: { $in: sessionIds } }).select('_id session');
+  const miniGameToSession = new Map(miniGames.map((m) => [m._id.toString(), m.session.toString()]));
+  const miniGameIds = miniGames.map((m) => m._id);
+
+  const stats = await PlayerMiniGameStats.find({ miniGame: { $in: miniGameIds } }).select(
+    'player miniGame points rebounds assists steals wins'
+  );
+
+  const totalsByKey = new Map();
+  for (const s of stats) {
+    const sessionId = miniGameToSession.get(s.miniGame.toString());
+    if (!sessionId) continue;
+    const key = `${sessionId}:${s.player.toString()}`;
+    if (!totalsByKey.has(key)) totalsByKey.set(key, emptyLeaderTotals());
+    const totals = totalsByKey.get(key);
+    for (const f of LEADER_FIELDS) totals[f] += s[f] || 0;
+  }
+
+  const maxBySession = new Map();
+  for (const [key, totals] of totalsByKey) {
+    const sessionId = key.split(':')[0];
+    if (!maxBySession.has(sessionId)) maxBySession.set(sessionId, emptyLeaderTotals());
+    const maxes = maxBySession.get(sessionId);
+    for (const f of LEADER_FIELDS) if (totals[f] > maxes[f]) maxes[f] = totals[f];
+  }
+
+  for (const sessionId of sessionIds) {
+    const maxes = maxBySession.get(sessionId);
+    const totals = totalsByKey.get(`${sessionId}:${playerId}`);
+    result[sessionId] = !maxes || !totals ? [] : LEADER_FIELDS.filter((f) => maxes[f] > 0 && totals[f] === maxes[f]);
+  }
+  return result;
+}
+
+// Same idea as computeSessionLeaderFields but for legacy (pre-mini-game) games, where every
+// player already has exactly one PlayerGameStats row per game.
+async function computeLegacyLeaderFields(playerId, gameIds) {
+  const result = {};
+  if (gameIds.length === 0) return result;
+
+  const stats = await PlayerGameStats.find({ game: { $in: gameIds } }).select(
+    'player game points rebounds assists steals wins'
+  );
+
+  const totalsByKey = new Map();
+  for (const s of stats) {
+    const gameId = s.game.toString();
+    const key = `${gameId}:${s.player.toString()}`;
+    if (!totalsByKey.has(key)) totalsByKey.set(key, emptyLeaderTotals());
+    const totals = totalsByKey.get(key);
+    for (const f of LEADER_FIELDS) totals[f] += s[f] || 0;
+  }
+
+  const maxByGame = new Map();
+  for (const [key, totals] of totalsByKey) {
+    const gameId = key.split(':')[0];
+    if (!maxByGame.has(gameId)) maxByGame.set(gameId, emptyLeaderTotals());
+    const maxes = maxByGame.get(gameId);
+    for (const f of LEADER_FIELDS) if (totals[f] > maxes[f]) maxes[f] = totals[f];
+  }
+
+  for (const gameId of gameIds) {
+    const maxes = maxByGame.get(gameId);
+    const totals = totalsByKey.get(`${gameId}:${playerId}`);
+    result[gameId] = !maxes || !totals ? [] : LEADER_FIELDS.filter((f) => maxes[f] > 0 && totals[f] === maxes[f]);
+  }
+  return result;
+}
 
 const router = express.Router();
 
@@ -163,7 +249,15 @@ router.get('/:id', async (req, res) => {
 
   const videos = await Video.find({ player: player._id }).sort({ createdAt: -1 });
 
-  res.json({ player, lifetime, gameLog, videos });
+  const sessionIds = [...new Set(miniGameRows.map((r) => r.sessionId.toString()))];
+  const gameIds = [...new Set(legacyRows.map((r) => r.gameId.toString()))];
+  const playerId = player._id.toString();
+  const [sessionLeaders, legacyLeaders] = await Promise.all([
+    computeSessionLeaderFields(playerId, sessionIds),
+    computeLegacyLeaderFields(playerId, gameIds),
+  ]);
+
+  res.json({ player, lifetime, gameLog, videos, sessionLeaders, legacyLeaders });
 });
 
 // Uploads a photo file to local disk and returns its URL — the admin form then saves that URL

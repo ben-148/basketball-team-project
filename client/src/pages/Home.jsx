@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import PlayerCard from '../components/PlayerCard.jsx';
+import LastSessionSection from '../components/LastSessionSection.jsx';
 
 export default function Home() {
   const [players, setPlayers] = useState([]);
@@ -26,6 +27,8 @@ export default function Home() {
           <p className="hero-tagline">Hustle. Heart. Hoops.</p>
         </div>
       </section>
+
+      <LastSessionSection />
 
       <div className="page-container">
         <h2 className="section-title">Our Roster</h2>

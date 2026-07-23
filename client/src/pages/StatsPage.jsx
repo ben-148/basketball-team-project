@@ -38,6 +38,7 @@ export default function StatsPage() {
             benchCount: row.benchCount,
           }))}
           columns={COLUMNS}
+          highlightLeaders
         />
       )}
     </div>

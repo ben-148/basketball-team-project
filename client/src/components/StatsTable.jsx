@@ -16,6 +16,19 @@ const STAT_COLUMNS = Object.fromEntries(
   ])
 );
 
+// Columns eligible for a leader indicator when `highlightLeaders` is on — star fields get ⭐,
+// the wins field gets 🏆. Turnovers, gamesPlayed, benchCount etc. never get one.
+const STAR_FIELDS = ['points', 'rebounds', 'assists', 'steals'];
+const TROPHY_FIELD = 'wins';
+
+function computeLeaderValues(rows) {
+  const leaders = {};
+  for (const field of [...STAR_FIELDS, TROPHY_FIELD]) {
+    leaders[field] = rows.reduce((max, row) => (typeof row[field] === 'number' && row[field] > max ? row[field] : max), 0);
+  }
+  return leaders;
+}
+
 // The full registry of column types StatsTable knows how to render. Each usage picks a subset
 // (by key, optionally overriding the label) via the `columns` prop.
 const COLUMN_DEFS = {
@@ -63,7 +76,16 @@ const COLUMN_DEFS = {
   ...STAT_COLUMNS,
 };
 
-export default function StatsTable({ rows, columns, sortable = true, onRowClick, wrapClassName, tableClassName }) {
+export default function StatsTable({
+  rows,
+  columns,
+  sortable = true,
+  onRowClick,
+  wrapClassName,
+  tableClassName,
+  highlightLeaders = false,
+  getRowLeaderFields,
+}) {
   const normalizedColumns = columns.map((col) => {
     const key = typeof col === 'string' ? col : col.key;
     const def = COLUMN_DEFS[key];
@@ -89,6 +111,33 @@ export default function StatsTable({ rows, columns, sortable = true, onRowClick,
   const { sortedRows, toggleSort, sortIndicator } = useSortableTable(rows, getValue, defaultSort);
   const displayRows = sortable ? sortedRows : rows;
   const showExpandColumn = Boolean(onRowClick);
+  // Two ways to determine leaders: the default computes the max of each column across the rows
+  // actually passed in (fine when every row belongs to the same comparison pool, e.g. one row per
+  // player). When rows represent something narrower — like one row per session for a single
+  // player — the caller must supply getRowLeaderFields to say which categories that row led
+  // among ALL participants, since that can't be derived from the displayed rows alone.
+  const leaderValues = highlightLeaders && !getRowLeaderFields ? computeLeaderValues(rows) : null;
+
+  function leaderIndicator(col, row) {
+    const isStar = STAR_FIELDS.includes(col.key);
+    const isTrophy = col.key === TROPHY_FIELD;
+    if (!isStar && !isTrophy) return null;
+
+    if (getRowLeaderFields) {
+      const fields = getRowLeaderFields(row) || [];
+      if (!fields.includes(col.key)) return null;
+    } else {
+      if (!leaderValues) return null;
+      const leaderValue = leaderValues[col.key];
+      if (leaderValue <= 0 || row[col.key] !== leaderValue) return null;
+    }
+
+    return (
+      <span className="stat-leader-badge" title={isTrophy ? 'המוביל בנצחונות' : `המוביל ב${col.label}`}>
+        {isTrophy ? '🏆' : '⭐'}
+      </span>
+    );
+  }
 
   return (
     <div className={['table-wrap', wrapClassName].filter(Boolean).join(' ')}>
@@ -124,7 +173,10 @@ export default function StatsTable({ rows, columns, sortable = true, onRowClick,
                     </td>
                   )}
                   {normalizedColumns.map((col) => (
-                    <td key={col.key}>{col.render(row)}</td>
+                    <td key={col.key}>
+                      {col.render(row)}
+                      {leaderIndicator(col, row)}
+                    </td>
                   ))}
                 </tr>
                 {row.expanded && row.expandedContent && (

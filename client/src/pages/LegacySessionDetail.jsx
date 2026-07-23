@@ -56,7 +56,7 @@ export default function LegacySessionDetail() {
         <p className="team-column-empty">
           This session predates mini-game tracking, so it has no mini-game breakdown.
         </p>
-        <StatsTable rows={rows} columns={COLUMNS} />
+        <StatsTable rows={rows} columns={COLUMNS} highlightLeaders />
       </section>
     </div>
   );

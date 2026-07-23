@@ -129,6 +129,7 @@ export default function SessionDetail() {
               benchCount: row.benchCount,
             }))}
             columns={SUMMARY_COLUMNS}
+            highlightLeaders
           />
         </section>
       )}

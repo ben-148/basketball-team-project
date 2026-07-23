@@ -243,6 +243,142 @@ h4 {
   letter-spacing: 0.04em;
 }
 
+/* ---------- Last session / MVP spotlight ---------- */
+
+.last-session-section {
+  margin: 2.5rem 0 3rem;
+}
+
+.last-session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.last-session-header .section-title {
+  margin: 0;
+}
+
+.last-session-link {
+  color: var(--color-accent);
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.last-session-link:hover {
+  color: var(--color-accent-dark);
+}
+
+.last-session-meta {
+  color: var(--color-text-muted);
+  margin: 0.35rem 0 1.25rem;
+  font-size: 0.95rem;
+}
+
+.last-session-empty {
+  color: var(--color-text-dim);
+}
+
+.mvp-row {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  justify-content: center;
+  justify-content: safe center;
+}
+
+.mvp-card {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  min-width: 240px;
+  max-width: 280px;
+  background: var(--gradient-panel);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.1rem;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mvp-card:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-glow);
+  border-color: var(--color-accent);
+}
+
+.mvp-card-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-accent);
+  flex-shrink: 0;
+}
+
+.mvp-card-body {
+  min-width: 0;
+}
+
+.mvp-card-emoji {
+  font-size: 1.15rem;
+  margin-inline-end: 0.3rem;
+}
+
+.mvp-card-name {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mvp-card-categories {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.mvp-card-category-line {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.last-session-stats {
+  margin-top: 1.75rem;
+}
+
+.last-session-stats-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0 0 0.75rem;
+}
+
+.last-session-stats-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.last-session-stats-scroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface-alt);
+  z-index: 1;
+}
+
 /* ---------- Player grid / cards ---------- */
 
 .player-grid {
@@ -391,6 +527,11 @@ section {
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.stat-leader-badge {
+  margin-inline-start: 0.35rem;
+  font-size: 0.9em;
 }
 
 .stat-tile {

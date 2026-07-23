@@ -97,7 +97,7 @@ export default function PlayerPage() {
   if (error) return <div className="page-container error-text">{error}</div>;
   if (!data) return null;
 
-  const { player, lifetime, gameLog, videos } = data;
+  const { player, lifetime, gameLog, videos, sessionLeaders = {}, legacyLeaders = {} } = data;
   const sessionEntries = buildSessionEntries(gameLog);
   const visibleEntries = showAllSessions ? sessionEntries : sessionEntries.slice(0, SESSIONS_PAGE_SIZE);
 
@@ -115,6 +115,7 @@ export default function PlayerPage() {
         wins: entry.row.wins,
         gamesPlayed: null,
         expandable: false,
+        leaderFields: legacyLeaders[entry.row.gameId] || [],
       };
     }
     const totals = sumStats(entry.miniGames);
@@ -132,6 +133,7 @@ export default function PlayerPage() {
       expandable: true,
       expanded: expandedKey === entry.key,
       expandedContent: <MiniGameBreakdown miniGames={entry.miniGames} />,
+      leaderFields: sessionLeaders[entry.sessionId] || [],
     };
   });
 
@@ -186,6 +188,7 @@ export default function PlayerPage() {
               rows={tableRows}
               columns={SESSION_LOG_COLUMNS}
               wrapClassName="session-log-scroll"
+              getRowLeaderFields={(row) => row.leaderFields}
               onRowClick={(row) =>
                 row.expandable !== false &&
                 setExpandedKey((prev) => (prev === row.key ? null : row.key))
