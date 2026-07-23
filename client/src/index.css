@@ -1472,22 +1472,22 @@ tr.row-status-none:hover {
   z-index: 1;
 }
 
-.session-log-row {
+.stats-table-row-clickable {
   cursor: pointer;
 }
 
-.session-log-row:hover {
+.stats-table-row-clickable:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.session-log-arrow {
+.stats-table-expand-arrow {
   width: 1.75rem;
   text-align: center;
   color: var(--color-accent);
   font-size: 0.75rem;
 }
 
-.session-log-detail-row td {
+.stats-table-expanded-row td {
   padding: 0;
   background: var(--color-bg-alt);
 }

@@ -32,6 +32,11 @@ export const api = {
     create: (data) => request('/players', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => request(`/players/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id) => request(`/players/${id}`, { method: 'DELETE' }),
+    uploadPhoto: (file) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      return uploadRequest('/players/upload-photo', formData);
+    },
   },
   games: {
     list: () => request('/games'),

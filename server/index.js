@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import { connectDB } from './config/db.js';
@@ -11,10 +13,13 @@ import miniGamesRouter from './routes/miniGames.js';
 import miniGameStatsRouter from './routes/miniGameStats.js';
 import importRouter from './routes/import.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/players', playersRouter);
 app.use('/api/games', gamesRouter);

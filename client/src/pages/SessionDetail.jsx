@@ -3,16 +3,11 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { formatDate } from "../utils/date.js";
 import { TEAMS, BENCH, STAT_FIELDS } from "../constants.js";
-import { useSortableTable } from "../hooks/useSortableTable.js";
 import MiniGameSummaryLine from "../components/MiniGameSummaryLine.jsx";
+import StatsTable from "../components/StatsTable.jsx";
 
 const MINIGAME_TABLE_FIELDS = STAT_FIELDS.filter(([field]) => field !== "wins");
-
-function getSummaryValue(row, field) {
-  if (field === "name") return row.player.name;
-  if (field === "benchCount") return row.benchCount;
-  return row.totals[field];
-}
+const SUMMARY_COLUMNS = ['player', 'points', 'assists', 'rebounds', 'steals', 'turnovers', 'gamesPlayed', 'wins', 'benchCount'];
 
 export default function SessionDetail() {
   const { id } = useParams();
@@ -28,12 +23,6 @@ export default function SessionDetail() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
-
-  const {
-    sortedRows: sortedSummary,
-    toggleSort,
-    sortIndicator,
-  } = useSortableTable(data ? data.summary : [], getSummaryValue);
 
   if (loading) return <div className="page-container">Loading...</div>;
   if (error) return <div className="page-container error-text">{error}</div>;
@@ -126,47 +115,21 @@ export default function SessionDetail() {
       {summary.length > 0 && (
         <section>
           <h2 className="section-title">Session Summary</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th
-                    className="sortable-th"
-                    onClick={() => toggleSort("name")}
-                  >
-                    Player{sortIndicator("name")}
-                  </th>
-                  {STAT_FIELDS.map(([field, label]) => (
-                    <th
-                      key={field}
-                      className="sortable-th"
-                      onClick={() => toggleSort(field)}
-                    >
-                      {label}
-                      {sortIndicator(field)}
-                    </th>
-                  ))}
-                  <th
-                    className="sortable-th"
-                    onClick={() => toggleSort("benchCount")}
-                  >
-                    🪑 Bench{sortIndicator("benchCount")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedSummary.map((row) => (
-                  <tr key={row.player._id}>
-                    <td>{row.player.name}</td>
-                    {STAT_FIELDS.map(([field]) => (
-                      <td key={field}>{row.totals[field]}</td>
-                    ))}
-                    <td>{row.benchCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StatsTable
+            rows={summary.map((row) => ({
+              key: row.player._id,
+              player: row.player,
+              points: row.totals.points,
+              rebounds: row.totals.rebounds,
+              assists: row.totals.assists,
+              steals: row.totals.steals,
+              turnovers: row.totals.turnovers,
+              wins: row.totals.wins,
+              gamesPlayed: row.miniGamesPlayed,
+              benchCount: row.benchCount,
+            }))}
+            columns={SUMMARY_COLUMNS}
+          />
         </section>
       )}
     </div>

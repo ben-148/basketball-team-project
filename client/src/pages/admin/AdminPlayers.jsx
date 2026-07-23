@@ -9,6 +9,7 @@ export default function AdminPlayers() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   function load() {
     api.players.list().then(setPlayers).catch((err) => setError(err.message));
@@ -52,6 +53,22 @@ export default function AdminPlayers() {
     }
   }
 
+  async function handlePhotoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const result = await api.players.uploadPhoto(file);
+      setForm((prev) => ({ ...prev, photo: result.url }));
+      toastSuccess('Photo uploaded');
+    } catch (err) {
+      toastError(err.message);
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
+  }
+
   async function handleDelete(id) {
     const confirmed = await toastConfirm('Delete this player? This also removes their stats.');
     if (!confirmed) return;
@@ -89,6 +106,13 @@ export default function AdminPlayers() {
           Photo URL
           <input value={form.photo} onChange={(e) => setForm({ ...form, photo: e.target.value })} />
         </label>
+        <label>
+          Or Upload Photo
+          <input type="file" accept="image/*" disabled={uploadingPhoto} onChange={handlePhotoUpload} />
+        </label>
+        {form.photo && (
+          <img className="admin-thumb" src={form.photo} alt="Preview" />
+        )}
         <label>
           Bio
           <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} />

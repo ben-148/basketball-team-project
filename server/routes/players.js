@@ -1,12 +1,44 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 import Player from '../models/Player.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
 import PlayerMiniGameStats from '../models/PlayerMiniGameStats.js';
 import Video from '../models/Video.js';
 import { BENCH } from '../constants.js';
 import { createStatTotals } from '../utils/statTotals.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PHOTOS_DIR = path.join(__dirname, '..', 'uploads', 'players');
+fs.mkdirSync(PHOTOS_DIR, { recursive: true });
+
+const photoUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, PHOTOS_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || '.jpg';
+      cb(null, `${crypto.randomUUID()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are accepted'));
+    }
+    cb(null, true);
+  },
+});
+
+function handlePhotoUploadError(err, req, res, next) {
+  if (err) return res.status(400).json({ error: err.message });
+  next();
+}
 
 router.get('/', async (req, res) => {
   const players = await Player.find().sort({ name: 1 });
@@ -133,6 +165,18 @@ router.get('/:id', async (req, res) => {
 
   res.json({ player, lifetime, gameLog, videos });
 });
+
+// Uploads a photo file to local disk and returns its URL — the admin form then saves that URL
+// on the player via the regular create/update routes, same as it would a pasted external URL.
+router.post(
+  '/upload-photo',
+  photoUpload.single('photo'),
+  handlePhotoUploadError,
+  asyncHandler(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No photo file was uploaded' });
+    res.json({ url: `/api/uploads/players/${req.file.filename}` });
+  })
+);
 
 router.post('/', async (req, res) => {
   const player = await Player.create(req.body);

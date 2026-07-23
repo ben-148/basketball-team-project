@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client.js';
-import StatValue from '../components/StatValue.jsx';
+import StatsTable from '../components/StatsTable.jsx';
 import { formatDate } from '../utils/date.js';
-import { STAT_FIELDS } from '../constants.js';
+
+const COLUMNS = ['player', 'points', 'assists', 'rebounds', 'steals', 'turnovers', 'wins'];
 
 export default function LegacySessionDetail() {
   const { id } = useParams();
@@ -28,6 +29,17 @@ export default function LegacySessionDetail() {
   if (error) return <div className="page-container error-text">{error}</div>;
   if (!game) return null;
 
+  const rows = players.map((row) => ({
+    key: row.player._id,
+    player: row.player,
+    points: row.stats.points,
+    rebounds: row.stats.rebounds,
+    assists: row.stats.assists,
+    steals: row.stats.steals,
+    turnovers: row.stats.turnovers,
+    wins: row.stats.wins,
+  }));
+
   return (
     <div className="page-container">
       <Link to="/sessions" className="back-link">
@@ -44,32 +56,7 @@ export default function LegacySessionDetail() {
         <p className="team-column-empty">
           This session predates mini-game tracking, so it has no mini-game breakdown.
         </p>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Team</th>
-                {STAT_FIELDS.map(([field, label]) => (
-                  <th key={field}>{label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((row) => (
-                <tr key={row.player._id}>
-                  <td>{row.player.name}</td>
-                  <td>N/A</td>
-                  {STAT_FIELDS.map(([field]) => (
-                    <td key={field}>
-                      <StatValue value={row.stats[field]} />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <StatsTable rows={rows} columns={COLUMNS} />
       </section>
     </div>
   );

@@ -1,12 +1,23 @@
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import VideoCard from '../components/VideoCard.jsx';
 import StatValue from '../components/StatValue.jsx';
+import StatsTable from '../components/StatsTable.jsx';
 import { STAT_FIELDS as STAT_LABELS, BENCH } from '../constants.js';
 import { formatDate } from '../utils/date.js';
 
 const SESSIONS_PAGE_SIZE = 10;
+const SESSION_LOG_COLUMNS = [
+  'date',
+  'points',
+  'assists',
+  'rebounds',
+  'steals',
+  'turnovers',
+  { key: 'gamesPlayed', label: 'Mini-Games' },
+  'wins',
+];
 
 // Groups the flat per-mini-game/legacy-game log into one row per evening session (mini-games
 // aggregated together) plus one row per legacy game (kept standalone — no mini-game breakdown).
@@ -39,6 +50,34 @@ function sumStats(rows) {
   return totals;
 }
 
+function MiniGameBreakdown({ miniGames }) {
+  const sorted = [...miniGames].sort((a, b) => new Date(a.miniGameCreatedAt) - new Date(b.miniGameCreatedAt));
+  return (
+    <table className="session-log-subtable">
+      <thead>
+        <tr>
+          <th>Mini-Game</th>
+          <th>Team</th>
+          {STAT_LABELS.map(([field, label]) => (
+            <th key={field}>{label}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map((mg, i) => (
+          <tr key={mg.miniGameId}>
+            <td>#{i + 1}</td>
+            <td>{mg.team === BENCH ? '🪑 Bench' : mg.team}</td>
+            {STAT_LABELS.map(([field]) => (
+              <td key={field}>{mg[field]}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function PlayerPage() {
   const { id } = useParams();
   const [data, setData] = useState(null);
@@ -63,6 +102,40 @@ export default function PlayerPage() {
   const { player, lifetime, gameLog, videos } = data;
   const sessionEntries = buildSessionEntries(gameLog);
   const visibleEntries = showAllSessions ? sessionEntries : sessionEntries.slice(0, SESSIONS_PAGE_SIZE);
+
+  const tableRows = visibleEntries.map((entry) => {
+    if (entry.type === 'legacy') {
+      return {
+        key: entry.key,
+        date: entry.date,
+        link: `/legacy-sessions/${entry.row.gameId}`,
+        points: entry.row.points,
+        rebounds: entry.row.rebounds,
+        assists: entry.row.assists,
+        steals: entry.row.steals,
+        turnovers: entry.row.turnovers,
+        wins: entry.row.wins,
+        gamesPlayed: null,
+        expandable: false,
+      };
+    }
+    const totals = sumStats(entry.miniGames);
+    return {
+      key: entry.key,
+      date: entry.date,
+      link: `/sessions/${entry.sessionId}`,
+      points: totals.points,
+      rebounds: totals.rebounds,
+      assists: totals.assists,
+      steals: totals.steals,
+      turnovers: totals.turnovers,
+      wins: totals.wins,
+      gamesPlayed: entry.miniGames.length,
+      expandable: true,
+      expanded: expandedKey === entry.key,
+      expandedContent: <MiniGameBreakdown miniGames={entry.miniGames} />,
+    };
+  });
 
   const metaParts = [];
   if (player.age != null) metaParts.push(`Age ${player.age}`);
@@ -111,94 +184,15 @@ export default function PlayerPage() {
           <p>No session stats recorded yet.</p>
         ) : (
           <>
-            <div className="table-wrap session-log-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Date</th>
-                    {STAT_LABELS.map(([field, label]) => (
-                      <th key={field}>{label}</th>
-                    ))}
-                    <th>Mini-Games</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleEntries.map((entry) => {
-                    if (entry.type === 'legacy') {
-                      return (
-                        <tr key={entry.key}>
-                          <td></td>
-                          <td>
-                            <Link to={`/legacy-sessions/${entry.row.gameId}`}>{formatDate(entry.date)}</Link>
-                          </td>
-                          {STAT_LABELS.map(([field]) => (
-                            <td key={field}>
-                              <StatValue value={entry.row[field]} />
-                            </td>
-                          ))}
-                          <td>—</td>
-                        </tr>
-                      );
-                    }
-
-                    const isExpanded = expandedKey === entry.key;
-                    const totals = sumStats(entry.miniGames);
-                    const sortedMiniGames = [...entry.miniGames].sort(
-                      (a, b) => new Date(a.miniGameCreatedAt) - new Date(b.miniGameCreatedAt)
-                    );
-
-                    return (
-                      <Fragment key={entry.key}>
-                        <tr
-                          className="session-log-row"
-                          onClick={() => setExpandedKey(isExpanded ? null : entry.key)}
-                        >
-                          <td className="session-log-arrow">{isExpanded ? '▼' : '▶'}</td>
-                          <td>
-                            <Link to={`/sessions/${entry.sessionId}`} onClick={(e) => e.stopPropagation()}>
-                              {formatDate(entry.date)}
-                            </Link>
-                          </td>
-                          {STAT_LABELS.map(([field]) => (
-                            <td key={field}>{totals[field]}</td>
-                          ))}
-                          <td>{entry.miniGames.length}</td>
-                        </tr>
-                        {isExpanded && (
-                          <tr className="session-log-detail-row">
-                            <td colSpan={STAT_LABELS.length + 3}>
-                              <table className="session-log-subtable">
-                                <thead>
-                                  <tr>
-                                    <th>Mini-Game</th>
-                                    <th>Team</th>
-                                    {STAT_LABELS.map(([field, label]) => (
-                                      <th key={field}>{label}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {sortedMiniGames.map((mg, i) => (
-                                    <tr key={mg.miniGameId}>
-                                      <td>#{i + 1}</td>
-                                      <td>{mg.team === BENCH ? '🪑 Bench' : mg.team}</td>
-                                      {STAT_LABELS.map(([field]) => (
-                                        <td key={field}>{mg[field]}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <StatsTable
+              rows={tableRows}
+              columns={SESSION_LOG_COLUMNS}
+              wrapClassName="session-log-scroll"
+              onRowClick={(row) =>
+                row.expandable !== false &&
+                setExpandedKey((prev) => (prev === row.key ? null : row.key))
+              }
+            />
             {!showAllSessions && sessionEntries.length > SESSIONS_PAGE_SIZE && (
               <button type="button" className="btn btn-sm session-log-show-all" onClick={() => setShowAllSessions(true)}>
                 הצג הכל
