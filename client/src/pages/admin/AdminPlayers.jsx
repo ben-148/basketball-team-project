@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client.js';
 import { toastSuccess, toastError, toastConfirm } from '../../utils/toast.jsx';
+import AdminBackLink from '../../components/AdminBackLink.jsx';
 
 const emptyForm = { name: '', age: '', dateOfBirth: '', photo: '', bio: '' };
 
@@ -84,6 +85,7 @@ export default function AdminPlayers() {
 
   return (
     <div>
+      <AdminBackLink />
       <h2>{editingId ? 'Edit Player' : 'Add Player'}</h2>
       <form className="form" onSubmit={handleSubmit}>
         <label>

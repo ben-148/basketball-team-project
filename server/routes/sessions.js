@@ -2,9 +2,22 @@ import express from 'express';
 import Session from '../models/Session.js';
 import MiniGame from '../models/MiniGame.js';
 import PlayerMiniGameStats from '../models/PlayerMiniGameStats.js';
+import Player from '../models/Player.js';
 import { STAT_FIELDS, BENCH } from '../constants.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
+
+// Players who have at least one PlayerMiniGameStats record (any team, including Bench) in any
+// mini-game belonging to this session — these players can't be removed from the roster without
+// losing real recorded data, so the admin UI locks them.
+async function getPlayersWithStatsInSession(sessionId) {
+  const miniGames = await MiniGame.find({ session: sessionId }).select('_id');
+  const miniGameIds = miniGames.map((m) => m._id);
+  if (miniGameIds.length === 0) return new Set();
+  const statsRecords = await PlayerMiniGameStats.find({ miniGame: { $in: miniGameIds } }).select('player');
+  return new Set(statsRecords.map((s) => s.player.toString()));
+}
 
 router.get('/', async (req, res) => {
   const sessions = await Session.find().sort({ date: -1 });
@@ -78,16 +91,52 @@ router.get('/:id', async (req, res) => {
   res.json({ session, miniGames: miniGamesOut, summary });
 });
 
+// Player IDs that can't be removed from this session's roster because they already have
+// recorded stats in one of its mini-games.
+router.get(
+  '/:id/locked-players',
+  asyncHandler(async (req, res) => {
+    const session = await Session.findById(req.params.id);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    const lockedIds = await getPlayersWithStatsInSession(session._id);
+    res.json({ lockedPlayerIds: Array.from(lockedIds) });
+  })
+);
+
 router.post('/', async (req, res) => {
   const session = await Session.create(req.body);
   res.status(201).json(session);
 });
 
-router.put('/:id', async (req, res) => {
-  const session = await Session.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-  if (!session) return res.status(404).json({ error: 'Session not found' });
-  res.json(session);
-});
+router.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const existing = await Session.findById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Session not found' });
+
+    if (Array.isArray(req.body.roster)) {
+      const newRosterIds = new Set(req.body.roster.map(String));
+      const removedPlayerIds = (existing.roster || []).map(String).filter((id) => !newRosterIds.has(id));
+
+      if (removedPlayerIds.length > 0) {
+        const lockedIds = await getPlayersWithStatsInSession(existing._id);
+        const blockedIds = removedPlayerIds.filter((id) => lockedIds.has(id));
+
+        if (blockedIds.length > 0) {
+          const blockedPlayers = await Player.find({ _id: { $in: blockedIds } });
+          const names = blockedPlayers.map((p) => p.name).join(', ');
+          return res.status(400).json({
+            error: `Cannot remove player(s) with existing stats in this session's mini-games: ${names}`,
+          });
+        }
+      }
+    }
+
+    const session = await Session.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    res.json(session);
+  })
+);
 
 router.delete('/:id', async (req, res) => {
   const session = await Session.findByIdAndDelete(req.params.id);

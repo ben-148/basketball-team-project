@@ -1,19 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../../api/client.js';
 import { formatDate } from '../../utils/date.js';
-import { toastSuccess, toastError, toastInfo, toastConfirm } from '../../utils/toast.jsx';
-
-const emptyForm = { date: '', notes: '', roster: [] };
-const MIN_ROSTER_SIZE = 6;
+import { toastSuccess, toastError, toastConfirm } from '../../utils/toast.jsx';
+import SessionFormModal from './SessionFormModal.jsx';
 
 export default function AdminSessions() {
-  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [players, setPlayers] = useState([]);
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  const [modalState, setModalState] = useState(null); // { mode: 'create' } | { mode: 'edit', session, lockedPlayerIds }
 
   function load() {
     api.sessions.list().then(setSessions).catch((err) => setError(err.message));
@@ -22,44 +18,10 @@ export default function AdminSessions() {
 
   useEffect(load, []);
 
-  function startEdit(session) {
-    setEditingId(session._id);
-    setForm({
-      date: session.date ? session.date.slice(0, 10) : '',
-      notes: session.notes || '',
-      roster: (session.roster || []).map(String),
-    });
-  }
-
-  function resetForm() {
-    setEditingId(null);
-    setForm(emptyForm);
-  }
-
-  function toggleRosterPlayer(playerId) {
-    setForm((prev) => ({
-      ...prev,
-      roster: prev.roster.includes(playerId)
-        ? prev.roster.filter((id) => id !== playerId)
-        : [...prev.roster, playerId],
-    }));
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
+  async function startEdit(session) {
     try {
-      if (editingId) {
-        await api.sessions.update(editingId, form);
-        toastSuccess('Session saved');
-        resetForm();
-        load();
-      } else {
-        const created = await api.sessions.create(form);
-        toastInfo('Session created');
-        resetForm();
-        navigate(`/admin/sessions/${created._id}`);
-      }
+      const { lockedPlayerIds } = await api.sessions.lockedPlayers(session._id);
+      setModalState({ mode: 'edit', session, lockedPlayerIds });
     } catch (err) {
       setError(err.message);
       toastError(err.message);
@@ -81,50 +43,11 @@ export default function AdminSessions() {
 
   return (
     <div>
-      <h2>{editingId ? 'Edit Session' : 'Add Session'}</h2>
-      <form className="form" onSubmit={handleSubmit}>
-        <div className="form-field">
-          <span className="form-field-label">Who showed up tonight?</span>
-          <div className="roster-checklist">
-            {players.map((p) => (
-              <label key={p._id} className="roster-checkbox">
-                <input
-                  type="checkbox"
-                  checked={form.roster.includes(p._id)}
-                  onChange={() => toggleRosterPlayer(p._id)}
-                />
-                {p.name}
-              </label>
-            ))}
-          </div>
-          <p className={`roster-counter ${form.roster.length < MIN_ROSTER_SIZE ? 'roster-counter-low' : ''}`}>
-            נבחרו {form.roster.length} שחקנים (מינימום {MIN_ROSTER_SIZE})
-          </p>
-        </div>
-        <label>
-          Date
-          <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
-        </label>
-        <label>
-          Notes
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
-        </label>
-        {error && <p className="error-text">{error}</p>}
-        <div className="form-actions">
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={!editingId && form.roster.length < MIN_ROSTER_SIZE}
-          >
-            {editingId ? 'Save Changes' : 'Add Session'}
-          </button>
-          {editingId && (
-            <button type="button" className="btn" onClick={resetForm}>
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
+      <button type="button" className="btn btn-primary btn-new-session" onClick={() => setModalState({ mode: 'create' })}>
+        ＋ סשן חדש
+      </button>
+
+      {error && <p className="error-text">{error}</p>}
 
       <h2>Sessions</h2>
       <div className="table-wrap">
@@ -161,6 +84,17 @@ export default function AdminSessions() {
           </tbody>
         </table>
       </div>
+
+      {modalState && (
+        <SessionFormModal
+          players={players}
+          mode={modalState.mode}
+          session={modalState.session}
+          lockedPlayerIds={modalState.lockedPlayerIds}
+          onClose={() => setModalState(null)}
+          onSaved={load}
+        />
+      )}
     </div>
   );
 }

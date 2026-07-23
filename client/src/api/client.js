@@ -51,6 +51,7 @@ export const api = {
     create: (data) => request('/sessions', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => request(`/sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id) => request(`/sessions/${id}`, { method: 'DELETE' }),
+    lockedPlayers: (id) => request(`/sessions/${id}/locked-players`),
   },
   miniGames: {
     create: (sessionId) => request('/minigames', { method: 'POST', body: JSON.stringify({ sessionId }) }),

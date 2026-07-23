@@ -1,5 +1,5 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { isAuthenticated, logout } from '../api/auth.js';
+import { NavLink, useNavigate } from "react-router-dom";
+import { isAuthenticated, logout } from "../api/auth.js";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -7,27 +7,41 @@ export default function Navbar() {
 
   function handleLogout() {
     logout();
-    navigate('/');
+    navigate("/");
   }
 
   return (
     <nav className="navbar">
       <NavLink to="/" className="navbar-brand" end>
-        <span className="navbar-logo">🏀</span> Rasko Ball
+        <span className="navbar-logo">🏀</span>{" "}
+        <span className="navbar-brand-text">Rasko Ball</span>
       </NavLink>
       <div className="navbar-links">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
           Home
         </NavLink>
-        <NavLink to="/sessions" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink
+          to="/sessions"
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
           Sessions
         </NavLink>
-        <NavLink to="/stats" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink
+          to="/stats"
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
           Stats
         </NavLink>
         {authed ? (
           <>
-            <NavLink to="/admin" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
               Admin
             </NavLink>
             <button className="link-button" onClick={handleLogout}>
@@ -35,7 +49,10 @@ export default function Navbar() {
             </button>
           </>
         ) : (
-          <NavLink to="/admin/login" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink
+            to="/admin/login"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
             Admin
           </NavLink>
         )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client.js';
 import { toastSuccess, toastError, toastConfirm } from '../../utils/toast.jsx';
+import AdminBackLink from '../../components/AdminBackLink.jsx';
 
 const emptyForm = { title: '', youtubeUrl: '', description: '', player: '' };
 
@@ -68,6 +69,7 @@ export default function AdminVideos() {
 
   return (
     <div>
+      <AdminBackLink />
       <h2>{editingId ? 'Edit Video' : 'Add Video'}</h2>
       <form className="form" onSubmit={handleSubmit}>
         <label>

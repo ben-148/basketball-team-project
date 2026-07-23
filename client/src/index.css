@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Boogaloo&display=swap');
+
 :root {
   /* Brand palette */
   --color-primary: #4b0082;
@@ -29,6 +31,7 @@
   --shadow-glow: 0 0 0 1px rgba(255, 215, 0, 0.25), 0 12px 34px rgba(124, 42, 232, 0.45);
   --radius: 14px;
   --font-display: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Boogaloo', cursive;
   color-scheme: dark;
 }
 
@@ -55,6 +58,7 @@ h2,
 h3,
 h4 {
   margin-top: 0;
+  font-family: var(--font-heading);
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -97,6 +101,10 @@ h4 {
   font-size: 1.5rem;
 }
 
+.navbar-brand-text {
+  font-family: 'Permanent Marker', cursive;
+}
+
 .navbar-links {
   display: flex;
   gap: 1.75rem;
@@ -120,8 +128,11 @@ h4 {
   }
 }
 
-.navbar-links a {
+.navbar-links a,
+.navbar-links .link-button {
   color: var(--color-text-muted);
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
   font-weight: 600;
   position: relative;
   padding: 0.35rem 0.1rem;
@@ -204,12 +215,14 @@ h4 {
   text-transform: uppercase;
   letter-spacing: 0.3em;
   color: var(--color-accent);
+  font-family: var(--font-heading);
   font-weight: 700;
   font-size: 0.85rem;
   margin: 0 0 0.5rem;
 }
 
 .hero-title {
+  font-family: 'Permanent Marker', cursive;
   font-size: clamp(2.6rem, 6vw, 4.5rem);
   margin: 0;
   line-height: 1.05;
@@ -223,6 +236,7 @@ h4 {
 
 .hero-tagline {
   margin: 1.25rem 0 0;
+  font-family: var(--font-heading);
   font-size: 1.25rem;
   color: var(--color-text-muted);
   font-weight: 600;
@@ -648,21 +662,28 @@ tbody tr:last-child td {
   flex-wrap: wrap;
 }
 
-.admin-tabs a {
+.admin-tabs a,
+.admin-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
   padding: 0.7rem 1.1rem;
   color: var(--color-text-muted);
-  border-bottom: 3px solid transparent;
   font-weight: 700;
+  font-family: inherit;
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.04em;
+  cursor: pointer;
 }
 
-.admin-tabs a:hover {
+.admin-tabs a:hover,
+.admin-tabs button:hover {
   color: var(--color-text);
 }
 
-.admin-tabs a.active {
+.admin-tabs a.active,
+.admin-tabs button.active {
   color: var(--color-accent);
   border-bottom-color: var(--color-accent);
 }
@@ -1160,52 +1181,6 @@ tbody tr:last-child td {
   letter-spacing: 0;
 }
 
-/* ---------- Session roster checklist ---------- */
-
-.roster-checklist {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding: 0.9rem;
-  background: var(--color-bg-alt);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-label.roster-checkbox {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 600;
-  color: var(--color-text);
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.roster-checkbox input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--color-accent);
-  cursor: pointer;
-}
-
-.roster-counter {
-  margin-top: 0.5rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #38c878;
-}
-
-.roster-counter-low {
-  color: var(--color-accent);
-}
-
 .session-roster-line {
   color: var(--color-text-muted);
   margin-bottom: 1.5rem;
@@ -1515,4 +1490,285 @@ tr.row-status-none:hover {
 
 .session-log-show-all {
   margin-top: 1rem;
+}
+
+/* ---------- Admin dashboard ---------- */
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.75rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 900px) {
+  .admin-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-dashboard-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2.75rem 1.75rem;
+  background: var(--gradient-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-dashboard-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.admin-dashboard-card-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 14px rgba(255, 215, 0, 0.35));
+}
+
+.admin-dashboard-card h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--color-accent);
+}
+
+.admin-dashboard-card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.btn-new-session {
+  display: block;
+  padding: 1rem 2rem;
+  font-size: 1.15rem;
+  margin-bottom: 2rem;
+}
+
+/* ---------- Create session modal ---------- */
+
+@keyframes modalBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalStepIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 8, 20, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+  animation: modalBackdropIn 0.15s ease;
+}
+
+.modal {
+  background: var(--gradient-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(255, 215, 0, 0.08);
+  padding: 2rem;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-step {
+  animation: modalStepIn 0.25s ease;
+}
+
+.modal-title {
+  text-align: center;
+  color: var(--color-accent);
+  margin-bottom: 1.5rem;
+}
+
+.player-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 1.25rem 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.player-select-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-family: inherit;
+}
+
+.player-select-circle {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--color-border);
+  background: var(--color-surface-alt);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.player-select-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--gradient-brand);
+  color: var(--color-bg);
+  font-weight: 800;
+  font-size: 1.4rem;
+}
+
+.player-select-item:hover .player-select-circle {
+  transform: translateY(-2px);
+  border-color: var(--color-primary-light);
+}
+
+.player-select-item.selected .player-select-circle {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.player-select-check {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.85rem;
+  border: 2px solid var(--color-bg-alt);
+}
+
+.player-select-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.player-select-item.selected .player-select-name {
+  color: var(--color-text);
+}
+
+.player-select-item.locked {
+  cursor: not-allowed;
+}
+
+.player-select-item.locked:hover .player-select-circle {
+  transform: none;
+  border-color: var(--color-accent);
+}
+
+.player-select-item.locked .player-select-circle {
+  opacity: 0.85;
+}
+
+.player-select-lock {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-bg-alt);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  border: 2px solid var(--color-accent);
+}
+
+.modal-roster-counter {
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.modal-roster-counter-ready {
+  color: var(--color-accent);
+}
+
+.modal-roster-counter-low {
+  color: var(--color-danger);
+}
+
+.selected-avatar-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.selected-avatar-chip {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--color-accent);
+}
+
+.selected-avatar-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.selected-avatar-chip .player-avatar-initials {
+  font-size: 0.85rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }

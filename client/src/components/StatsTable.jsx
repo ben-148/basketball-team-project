@@ -76,8 +76,13 @@ export default function StatsTable({ rows, columns, sortable = true, onRowClick,
     return col ? col.getValue(row) : null;
   }
 
-  // Tables that surface a wins column default to sorting by wins descending on load.
-  const defaultSort = normalizedColumns.some((c) => c.key === 'wins')
+  // Tables with a date column default to newest-first; otherwise tables with a wins column
+  // default to wins descending. Everything else keeps its natural incoming row order.
+  const hasDateColumn = normalizedColumns.some((c) => c.key === 'date');
+  const hasWinsColumn = normalizedColumns.some((c) => c.key === 'wins');
+  const defaultSort = hasDateColumn
+    ? { field: 'date', dir: 'desc' }
+    : hasWinsColumn
     ? { field: 'wins', dir: 'desc' }
     : { field: null, dir: null };
 

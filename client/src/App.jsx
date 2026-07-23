@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
@@ -10,11 +10,11 @@ import LegacySessionDetail from './pages/LegacySessionDetail.jsx';
 import StatsPage from './pages/StatsPage.jsx';
 import AdminLogin from './pages/AdminLogin.jsx';
 import AdminLayout from './pages/AdminLayout.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminPlayers from './pages/admin/AdminPlayers.jsx';
-import AdminSessions from './pages/admin/AdminSessions.jsx';
+import AdminSessionsHub from './pages/admin/AdminSessionsHub.jsx';
 import AdminSessionDetail from './pages/admin/AdminSessionDetail.jsx';
 import AdminVideos from './pages/admin/AdminVideos.jsx';
-import AdminImport from './pages/admin/AdminImport.jsx';
 
 export default function App() {
   return (
@@ -41,12 +41,11 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route index element={<Navigate to="/admin/sessions" replace />} />
+          <Route index element={<AdminDashboard />} />
           <Route path="players" element={<AdminPlayers />} />
-          <Route path="sessions" element={<AdminSessions />} />
+          <Route path="sessions" element={<AdminSessionsHub />} />
           <Route path="sessions/:sessionId" element={<AdminSessionDetail />} />
           <Route path="videos" element={<AdminVideos />} />
-          <Route path="import" element={<AdminImport />} />
         </Route>
       </Routes>
     </>
