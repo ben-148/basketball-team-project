@@ -1,13 +1,25 @@
 import express from 'express';
 import Game from '../models/Game.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
-  const games = await Game.find().sort({ date: -1 });
-  res.json(games);
-});
+router.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const games = await Game.find().sort({ date: -1 });
+    const counts = await PlayerGameStats.aggregate([{ $group: { _id: '$game', count: { $sum: 1 } } }]);
+    const countMap = Object.fromEntries(counts.map((c) => [c._id.toString(), c.count]));
+
+    res.json(
+      games.map((g) => ({
+        ...g.toObject(),
+        playerCount: countMap[g._id.toString()] || 0,
+      }))
+    );
+  })
+);
 
 router.get('/:id', async (req, res) => {
   const game = await Game.findById(req.params.id);

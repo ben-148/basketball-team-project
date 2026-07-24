@@ -2,14 +2,23 @@ import { useState } from 'react';
 import AdminBackLink from '../../components/AdminBackLink.jsx';
 import AdminSessions from './AdminSessions.jsx';
 import AdminImport from './AdminImport.jsx';
+import AdminLegacySessions from './AdminLegacySessions.jsx';
 
 const TABS = [
   { key: 'sessions', label: 'סשנים' },
   { key: 'import', label: 'ייבוא מ-PDF' },
+  { key: 'legacy', label: 'סשני עבר (Legacy)' },
 ];
+
+const TAB_COMPONENTS = {
+  sessions: AdminSessions,
+  import: AdminImport,
+  legacy: AdminLegacySessions,
+};
 
 export default function AdminSessionsHub() {
   const [tab, setTab] = useState('sessions');
+  const TabComponent = TAB_COMPONENTS[tab];
 
   return (
     <div>
@@ -27,7 +36,9 @@ export default function AdminSessionsHub() {
           </button>
         ))}
       </div>
-      <div className="admin-content">{tab === 'sessions' ? <AdminSessions /> : <AdminImport />}</div>
+      <div className="admin-content">
+        <TabComponent />
+      </div>
     </div>
   );
 }

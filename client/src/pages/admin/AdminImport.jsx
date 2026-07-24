@@ -3,6 +3,7 @@ import { api } from '../../api/client.js';
 import { formatDate } from '../../utils/date.js';
 import { STAT_FIELDS } from '../../constants.js';
 import { toastSuccess, toastError, toastWarning, toastConfirm } from '../../utils/toast.jsx';
+import { parseDateFromFilename } from '../../utils/filenameDate.js';
 
 function statusClass(matchType) {
   if (matchType === 'none') return 'row-status-none';
@@ -20,6 +21,7 @@ export default function AdminImport() {
   const [missingColumns, setMissingColumns] = useState([]);
   const [date, setDate] = useState('');
   const [dateWarning, setDateWarning] = useState(false);
+  const [dateAutoDetected, setDateAutoDetected] = useState(false);
   const [importing, setImporting] = useState(false);
   const [successSummary, setSuccessSummary] = useState(null);
   const [error, setError] = useState('');
@@ -51,11 +53,30 @@ export default function AdminImport() {
       if (unmatchedCount > 0) {
         toastWarning(`${unmatchedCount} player${unmatchedCount > 1 ? 's' : ''} could not be matched — review before importing`);
       }
+
+      const detectedDate = parseDateFromFilename(file.name);
+      if (detectedDate) {
+        setDate(detectedDate);
+        setDateAutoDetected(true);
+        await checkDateDuplicate(detectedDate);
+      }
     } catch (err) {
       setError(err.message);
       toastError(err.message);
     } finally {
       setExtracting(false);
+    }
+  }
+
+  async function checkDateDuplicate(value) {
+    try {
+      const result = await api.import.checkDate(value);
+      setDateWarning(result.exists);
+      if (result.exists) {
+        toastWarning('A game already exists for this date');
+      }
+    } catch {
+      setDateWarning(false);
     }
   }
 
@@ -97,19 +118,12 @@ export default function AdminImport() {
   async function handleDateChange(e) {
     const value = e.target.value;
     setDate(value);
+    setDateAutoDetected(false);
     if (!value) {
       setDateWarning(false);
       return;
     }
-    try {
-      const result = await api.import.checkDate(value);
-      setDateWarning(result.exists);
-      if (result.exists) {
-        toastWarning('A game already exists for this date');
-      }
-    } catch {
-      setDateWarning(false);
-    }
+    await checkDateDuplicate(value);
   }
 
   async function handleConfirm() {
@@ -143,6 +157,7 @@ export default function AdminImport() {
     setMissingColumns([]);
     setDate('');
     setDateWarning(false);
+    setDateAutoDetected(false);
     setSuccessSummary(null);
     setError('');
   }
@@ -205,6 +220,9 @@ export default function AdminImport() {
               תאריך המשחק *
               <input type="date" value={date} onChange={handleDateChange} required />
             </label>
+            {dateAutoDetected && !dateWarning && (
+              <p className="import-date-detected-note">📅 תאריך זוהה משם הקובץ</p>
+            )}
             {dateWarning && <p className="error-text">⚠️ כבר קיים משחק בתאריך זה במערכת</p>}
           </div>
 

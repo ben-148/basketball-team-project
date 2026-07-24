@@ -2,6 +2,7 @@ import express from 'express';
 import Player from '../models/Player.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
 import { TEAMS, STAT_FIELDS } from '../constants.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
@@ -79,5 +80,28 @@ router.post('/increment', async (req, res) => {
 
   res.json(doc);
 });
+
+// Writes a player's final stat values for a legacy game in one shot — lets the admin edit
+// already-imported (or manually created) legacy sessions directly instead of only via PDF import.
+router.post(
+  '/save',
+  asyncHandler(async (req, res) => {
+    const { playerId, gameId, stats } = req.body;
+
+    const doc = await PlayerGameStats.findOne({ player: playerId, game: gameId });
+    if (!doc) {
+      return res.status(404).json({ error: 'Player is not assigned to a team for this game yet' });
+    }
+
+    for (const field of STAT_FIELDS) {
+      if (stats && stats[field] !== undefined) {
+        doc[field] = Math.max(0, Number(stats[field]) || 0);
+      }
+    }
+    await doc.save();
+
+    res.json(doc);
+  })
+);
 
 export default router;

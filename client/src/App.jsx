@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminPlayers from './pages/admin/AdminPlayers.jsx';
 import AdminSessionsHub from './pages/admin/AdminSessionsHub.jsx';
 import AdminSessionDetail from './pages/admin/AdminSessionDetail.jsx';
+import AdminLegacySessionDetail from './pages/admin/AdminLegacySessionDetail.jsx';
 import AdminVideos from './pages/admin/AdminVideos.jsx';
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="players" element={<AdminPlayers />} />
           <Route path="sessions" element={<AdminSessionsHub />} />
           <Route path="sessions/:sessionId" element={<AdminSessionDetail />} />
+          <Route path="legacy-sessions/:gameId" element={<AdminLegacySessionDetail />} />
           <Route path="videos" element={<AdminVideos />} />
         </Route>
       </Routes>

@@ -41,9 +41,17 @@ export const api = {
   games: {
     list: () => request('/games'),
     get: (id) => request(`/games/${id}`),
+    update: (id, data) => request(`/games/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (id) => request(`/games/${id}`, { method: 'DELETE' }),
   },
   legacyStats: {
     forGame: (gameId) => request(`/stats/game/${gameId}`),
+    assign: (playerId, gameId, team) =>
+      request('/stats/assign', { method: 'POST', body: JSON.stringify({ playerId, gameId, team }) }),
+    unassign: (playerId, gameId) =>
+      request('/stats/unassign', { method: 'POST', body: JSON.stringify({ playerId, gameId }) }),
+    save: (playerId, gameId, stats) =>
+      request('/stats/save', { method: 'POST', body: JSON.stringify({ playerId, gameId, stats }) }),
   },
   sessions: {
     list: () => request('/sessions'),
