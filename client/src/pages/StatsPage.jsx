@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import StatsTable from '../components/StatsTable.jsx';
+import { STAT_COLUMNS } from '../config/statConfig.js';
 
-const COLUMNS = ['player', 'points', 'assists', 'rebounds', 'steals', 'turnovers', 'gamesPlayed', 'wins', 'benchCount'];
+// Stat columns come straight from the shared config, in its order; structural columns
+// (games played, bench count) are appended after — they aren't part of the stat order itself.
+const COLUMNS = ['player', ...STAT_COLUMNS.map((c) => c.key), 'gamesPlayed', 'benchCount'];
 
 export default function StatsPage() {
   const [rows, setRows] = useState([]);
@@ -36,6 +39,7 @@ export default function StatsPage() {
             wins: row.totals.wins,
             gamesPlayed: row.gamesPlayed,
             benchCount: row.benchCount,
+            achievements: row.achievements,
           }))}
           columns={COLUMNS}
           highlightLeaders

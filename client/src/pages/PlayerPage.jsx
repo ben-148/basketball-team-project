@@ -4,30 +4,12 @@ import { api } from '../api/client.js';
 import VideoCard from '../components/VideoCard.jsx';
 import StatValue from '../components/StatValue.jsx';
 import StatsTable from '../components/StatsTable.jsx';
-import { STAT_FIELDS as STAT_LABELS } from '../constants.js';
+import { STAT_COLUMNS, RAW_STAT_KEYS, getStatValueField } from '../config/statConfig.js';
 import { formatDate } from '../utils/date.js';
 
 const SESSIONS_PAGE_SIZE = 10;
-const SESSION_LOG_COLUMNS = [
-  'date',
-  'points',
-  'assists',
-  'rebounds',
-  'steals',
-  'turnovers',
-  { key: 'gamesPlayed', label: 'Mini-Games' },
-  'wins',
-];
-const MINIGAME_BREAKDOWN_COLUMNS = [
-  'miniGameNumber',
-  'team',
-  'points',
-  'assists',
-  'rebounds',
-  'steals',
-  'turnovers',
-  'wins',
-];
+const SESSION_LOG_COLUMNS = ['date', ...RAW_STAT_KEYS, { key: 'gamesPlayed', label: 'Mini-Games' }];
+const MINIGAME_BREAKDOWN_COLUMNS = ['miniGameNumber', 'team', ...RAW_STAT_KEYS];
 
 // Groups the flat per-mini-game/legacy-game log into one row per evening session (mini-games
 // aggregated together) plus one row per legacy game (kept standalone — no mini-game breakdown).
@@ -54,10 +36,14 @@ function buildSessionEntries(gameLog) {
 
 function sumStats(rows) {
   const totals = {};
-  for (const [field] of STAT_LABELS) {
+  for (const field of RAW_STAT_KEYS) {
     totals[field] = rows.reduce((sum, r) => sum + (r[field] || 0), 0);
   }
   return totals;
+}
+
+function pickRawStats(source) {
+  return Object.fromEntries(RAW_STAT_KEYS.map((field) => [field, source[field]]));
 }
 
 function MiniGameBreakdown({ miniGames }) {
@@ -66,12 +52,7 @@ function MiniGameBreakdown({ miniGames }) {
     key: mg.miniGameId,
     miniGameNumber: i + 1,
     team: mg.team,
-    points: mg.points,
-    assists: mg.assists,
-    rebounds: mg.rebounds,
-    steals: mg.steals,
-    turnovers: mg.turnovers,
-    wins: mg.wins,
+    ...pickRawStats(mg),
   }));
   return <StatsTable rows={rows} columns={MINIGAME_BREAKDOWN_COLUMNS} tableClassName="session-log-subtable" />;
 }
@@ -97,7 +78,7 @@ export default function PlayerPage() {
   if (error) return <div className="page-container error-text">{error}</div>;
   if (!data) return null;
 
-  const { player, lifetime, gameLog, videos, sessionLeaders = {}, legacyLeaders = {} } = data;
+  const { player, lifetime, gameLog, videos, sessionLeaders = {}, legacyLeaders = {}, ranks = {} } = data;
   const sessionEntries = buildSessionEntries(gameLog);
   const visibleEntries = showAllSessions ? sessionEntries : sessionEntries.slice(0, SESSIONS_PAGE_SIZE);
 
@@ -107,12 +88,7 @@ export default function PlayerPage() {
         key: entry.key,
         date: entry.date,
         link: `/legacy-sessions/${entry.row.gameId}`,
-        points: entry.row.points,
-        rebounds: entry.row.rebounds,
-        assists: entry.row.assists,
-        steals: entry.row.steals,
-        turnovers: entry.row.turnovers,
-        wins: entry.row.wins,
+        ...pickRawStats(entry.row),
         gamesPlayed: null,
         expandable: false,
         leaderFields: legacyLeaders[entry.row.gameId] || [],
@@ -123,12 +99,7 @@ export default function PlayerPage() {
       key: entry.key,
       date: entry.date,
       link: `/sessions/${entry.sessionId}`,
-      points: totals.points,
-      rebounds: totals.rebounds,
-      assists: totals.assists,
-      steals: totals.steals,
-      turnovers: totals.turnovers,
-      wins: totals.wins,
+      ...pickRawStats(totals),
       gamesPlayed: entry.miniGames.length,
       expandable: true,
       expanded: expandedKey === entry.key,
@@ -163,14 +134,18 @@ export default function PlayerPage() {
       <section>
         <h2 className="section-title">Career Stats ({lifetime.gamesPlayed} played)</h2>
         <div className="stat-grid">
-          {STAT_LABELS.map(([field, label]) => (
-            <div key={field} className="stat-tile">
-              <div className="stat-value">
-                <StatValue value={lifetime[field]} />
+          {STAT_COLUMNS.map(({ key, label }) => {
+            const valueField = getStatValueField(key);
+            return (
+              <div key={key} className="stat-tile">
+                {ranks[valueField] != null && <span className="stat-tile-rank">#{ranks[valueField]}</span>}
+                <div className="stat-value">
+                  <StatValue value={lifetime[valueField]} />
+                </div>
+                <div className="stat-label">{label}</div>
               </div>
-              <div className="stat-label">{label}</div>
-            </div>
-          ))}
+            );
+          })}
           <div className="stat-tile">
             <div className="stat-value">{lifetime.benchCount}</div>
             <div className="stat-label">🪑 ספסל</div>

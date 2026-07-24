@@ -29,6 +29,8 @@
   --gradient-panel: linear-gradient(120deg, var(--color-primary-dark) 0%, var(--color-bg-alt) 70%);
   --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-glow: 0 0 0 1px rgba(255, 215, 0, 0.25), 0 12px 34px rgba(124, 42, 232, 0.45);
+  --shadow-glow-purple: 0 0 0 1px rgba(124, 42, 232, 0.4), 0 12px 30px rgba(75, 0, 130, 0.55);
+  --shadow-glow-gold: 0 0 0 1px rgba(255, 215, 0, 0.4), 0 12px 30px rgba(255, 215, 0, 0.25);
   --radius: 14px;
   --font-display: 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-heading: 'Boogaloo', cursive;
@@ -234,19 +236,37 @@ h4 {
   color: var(--color-accent);
 }
 
-.hero-tagline {
+/* .hero-tagline {
   margin: 1.25rem 0 0;
   font-family: var(--font-heading);
   font-size: 1.25rem;
   color: var(--color-text-muted);
   font-weight: 600;
   letter-spacing: 0.04em;
+} */
+
+
+
+.hero-tagline {
+  background: transparent;
+  /* להסיר את הרקע האפור */
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  font-size: 1.1rem;
+  margin-top: 12px;
 }
 
 /* ---------- Last session / MVP spotlight ---------- */
 
+.last-session-band {
+  background: var(--color-bg-alt);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.35);
+}
+
 .last-session-section {
-  margin: 2.5rem 0 3rem;
+  padding: 1.1rem 0;
 }
 
 .last-session-header {
@@ -258,23 +278,14 @@ h4 {
 
 .last-session-header .section-title {
   margin: 0;
-}
-
-.last-session-link {
-  color: var(--color-accent);
-  font-weight: 700;
-  font-size: 0.95rem;
-  white-space: nowrap;
-}
-
-.last-session-link:hover {
-  color: var(--color-accent-dark);
+  font-size: 1.2rem;
+  padding-inline-start: 0.6rem;
 }
 
 .last-session-meta {
   color: var(--color-text-muted);
-  margin: 0.35rem 0 1.25rem;
-  font-size: 0.95rem;
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.85rem;
 }
 
 .last-session-empty {
@@ -283,61 +294,90 @@ h4 {
 
 .mvp-row {
   display: flex;
-  gap: 1rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
+  flex-wrap: wrap;
   justify-content: center;
-  justify-content: safe center;
+  gap: 0.75rem;
+  /* Room for the hover lift/scale below so cards never get clipped by the row's own box. */
+  padding: 0.5rem 0.25rem 0.6rem;
+  overflow: visible;
 }
 
 .mvp-card {
   flex: 0 0 auto;
   display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  min-width: 240px;
-  max-width: 280px;
+  flex-direction: column;
+  width: 132px;
   background: var(--gradient-panel);
   border: 1px solid rgba(255, 215, 0, 0.35);
   border-radius: var(--radius);
-  padding: 0.85rem 1.1rem;
+  overflow: hidden;
   box-shadow: var(--shadow-card);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .mvp-card:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: var(--shadow-glow);
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: var(--shadow-glow-gold);
   border-color: var(--color-accent);
 }
 
-.mvp-card-photo {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--color-accent);
+/* Photo fills the top of the card as a banner, ~60% of the card's typical height. */
+.mvp-card-banner {
+  position: relative;
+  height: 88px;
   flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mvp-card-banner-fallback {
+  background: var(--color-primary);
+}
+
+.mvp-card-banner-initials {
+  position: absolute;
+  top: 0.4rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.mvp-card-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 100%);
+}
+
+.mvp-card-name {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0 0.45rem 0.4rem;
+  width: 100%;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mvp-card-body {
   min-width: 0;
+  padding: 0.5rem 0.55rem 0.6rem;
 }
 
 .mvp-card-emoji {
-  font-size: 1.15rem;
-  margin-inline-end: 0.3rem;
-}
-
-.mvp-card-name {
-  margin: 0 0 0.3rem;
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--color-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  margin-inline-end: 0.2rem;
 }
 
 .mvp-card-categories {
@@ -350,26 +390,61 @@ h4 {
 }
 
 .mvp-card-category-line {
-  font-size: 0.9rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--color-accent);
-  white-space: nowrap;
+}
+
+.mvp-card-first-career {
+  color: var(--color-accent);
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.85);
 }
 
 .last-session-stats {
-  margin-top: 1.75rem;
+  margin-top: 0.85rem;
+}
+
+.last-session-stats-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.4rem;
 }
 
 .last-session-stats-title {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: var(--color-text);
-  margin: 0 0 0.75rem;
+  margin: 0;
+}
+
+.last-session-stats-show-all {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.last-session-stats-show-all:hover {
+  color: var(--color-accent-dark);
 }
 
 .last-session-stats-scroll {
-  max-height: 300px;
+  max-height: 260px;
   overflow-y: auto;
+}
+
+.last-session-stats-scroll th,
+.last-session-stats-scroll td {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.82rem;
 }
 
 .last-session-stats-scroll thead th {
@@ -535,6 +610,7 @@ section {
 }
 
 .stat-tile {
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -547,6 +623,16 @@ section {
   transform: translateY(-3px);
   border-color: var(--color-accent);
   box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+}
+
+.stat-tile-rank {
+  position: absolute;
+  top: 0.5rem;
+  inset-inline-end: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  opacity: 0.75;
 }
 
 .stat-value {
@@ -755,14 +841,14 @@ tbody tr:last-child td {
 }
 
 .btn-primary {
-  background: var(--gradient-brand);
+  background: var(--color-primary);
   border-color: transparent;
-  color: var(--color-bg);
+  color: #ffffff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: var(--shadow-glow);
-  filter: brightness(1.05);
+  background: var(--color-primary-light);
+  box-shadow: var(--shadow-glow-purple);
 }
 
 .btn-danger {
@@ -1040,12 +1126,13 @@ tbody tr:last-child td {
 }
 
 .stat-counter-plus {
-  background: var(--gradient-brand);
-  color: var(--color-bg);
+  background: var(--color-primary);
+  color: #ffffff;
 }
 
 .stat-counter-plus:hover:not(:disabled) {
-  box-shadow: var(--shadow-glow);
+  background: var(--color-primary-light);
+  box-shadow: var(--shadow-glow-purple);
 }
 
 .stat-counter-value {
@@ -1189,19 +1276,23 @@ tbody tr:last-child td {
 }
 
 @keyframes shake {
+
   10%,
   90% {
     transform: translateX(-2px);
   }
+
   20%,
   80% {
     transform: translateX(4px);
   }
+
   30%,
   50%,
   70% {
     transform: translateX(-6px);
   }
+
   40%,
   60% {
     transform: translateX(6px);
@@ -1699,6 +1790,7 @@ tr.row-status-none:hover {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1709,6 +1801,7 @@ tr.row-status-none:hover {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: none;

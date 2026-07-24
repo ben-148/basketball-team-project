@@ -5,6 +5,7 @@ import PlayerMiniGameStats from '../models/PlayerMiniGameStats.js';
 import Player from '../models/Player.js';
 import { STAT_FIELDS, BENCH } from '../constants.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { computeCareerAchievements } from '../utils/achievements.js';
 
 const router = express.Router();
 
@@ -88,6 +89,18 @@ router.get('/:id', async (req, res) => {
 
   const summary = Array.from(summaryMap.values()).sort((a, b) => b.totals.points - a.totals.points);
 
+  // For each player in the summary, which of the categories they led IN THIS SESSION are also
+  // the first time ever in their career they led that category — used by the home page's "last
+  // session" MVP cards to show a "לראשונה בקריירה" badge.
+  const { firstAchievementKey, eventLeaderFields } = await computeCareerAchievements();
+  const eventKey = `session:${session._id.toString()}`;
+  const leadersThisSession = eventLeaderFields.get(eventKey) || new Map();
+  for (const row of summary) {
+    const playerId = row.player._id.toString();
+    const ledFields = leadersThisSession.get(playerId) || [];
+    row.firstCareerFields = ledFields.filter((f) => firstAchievementKey.get(`${playerId}:${f}`) === eventKey);
+  }
+
   res.json({ session, miniGames: miniGamesOut, summary });
 });
 
@@ -104,10 +117,19 @@ router.get(
   })
 );
 
-router.post('/', async (req, res) => {
-  const session = await Session.create(req.body);
-  res.status(201).json(session);
-});
+router.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    if (req.body.date) {
+      const duplicate = await Session.findOne({ date: new Date(req.body.date) });
+      if (duplicate) {
+        return res.status(400).json({ error: 'כבר קיים סשן בתאריך זה' });
+      }
+    }
+    const session = await Session.create(req.body);
+    res.status(201).json(session);
+  })
+);
 
 router.put(
   '/:id',

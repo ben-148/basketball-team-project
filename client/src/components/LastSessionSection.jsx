@@ -2,22 +2,43 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { formatDate } from '../utils/date.js';
+import { getInitials } from '../utils/avatar.js';
+import { RAW_STAT_KEYS, STAR_STAT_KEYS, TROPHY_STAT_KEY, getStatColumn } from '../config/statConfig.js';
 import StatsTable from './StatsTable.jsx';
 
-const SESSION_STATS_COLUMNS = ['player', 'points', 'assists', 'rebounds', 'steals', 'turnovers', 'wins'];
+const SESSION_STATS_COLUMNS = ['player', ...RAW_STAT_KEYS];
+const SESSION_STATS_PREVIEW_COUNT = 4;
+const LEADER_FIELDS = [...STAR_STAT_KEYS, TROPHY_STAT_KEY];
 
-// Priority order: wins first, then points, assists, rebounds, steals — both for which card
-// leads the row and for the order categories are listed within a single player's card.
-const MVP_CATEGORIES = [
-  { field: 'wins', label: 'נצחונות', emoji: '🏆' },
-  { field: 'points', label: 'נקודות', emoji: '👑' },
-  { field: 'assists', label: 'אסיסט', emoji: '👑' },
-  { field: 'rebounds', label: 'ריבאונד', emoji: '👑' },
-  { field: 'steals', label: 'חטיפות', emoji: '👑' },
-];
+// Computed against the FULL session summary regardless of how many rows are actually shown, so
+// the ⭐/🏆 badges stay correct even when the table is collapsed to the top-4-by-wins preview.
+function computeSessionStatsLeaderFields(summary) {
+  const maxes = {};
+  for (const field of LEADER_FIELDS) {
+    maxes[field] = summary.reduce((best, row) => Math.max(best, row.totals[field] || 0), 0);
+  }
+  const result = {};
+  for (const row of summary) {
+    result[row.player._id] = LEADER_FIELDS.filter((f) => maxes[f] > 0 && row.totals[f] === maxes[f]);
+  }
+  return result;
+}
+
+// Priority order: wins first, then points, assists, rebounds, steals — both for which card leads
+// the row and for the order categories are listed within a single player's card. This ordering
+// (and the 👑/🏆 emoji split) is specific to the MVP spotlight, distinct from the ⭐/🏆 table
+// leader badges — only the label text is sourced from the shared stat config.
+const MVP_CATEGORY_ORDER = ['wins', 'points', 'assists', 'rebounds', 'steals'];
+const MVP_CATEGORIES = MVP_CATEGORY_ORDER.map((field) => ({
+  field,
+  label: getStatColumn(field).label,
+  emoji: field === 'wins' ? '🏆' : '👑',
+}));
 
 // One card per player — a player leading multiple categories gets a single card listing every
 // category they lead, in priority order. Categories where nobody scored above 0 are skipped.
+// `firstCareerFields` (server-computed) marks which of those leads are also the first time ever
+// in this player's career they've led that category.
 function buildMvpCards(summary) {
   const playerCards = new Map();
 
@@ -30,11 +51,23 @@ function buildMvpCards(summary) {
       if (!playerCards.has(id)) {
         playerCards.set(id, { key: id, player: row.player, priorityIndex, categories: [] });
       }
-      playerCards.get(id).categories.push({ field, label, emoji, value: max });
+      const isFirstCareer = (row.firstCareerFields || []).includes(field);
+      playerCards.get(id).categories.push({ field, label, emoji, value: max, isFirstCareer });
     }
   });
 
   return Array.from(playerCards.values()).sort((a, b) => a.priorityIndex - b.priorityIndex);
+}
+
+function MvpBanner({ player }) {
+  const style = player.photo ? { backgroundImage: `url(${player.photo})` } : undefined;
+  return (
+    <div className={`mvp-card-banner${player.photo ? '' : ' mvp-card-banner-fallback'}`} style={style}>
+      {!player.photo && <span className="mvp-card-banner-initials">{getInitials(player.name)}</span>}
+      <div className="mvp-card-banner-overlay" />
+      <h3 className="mvp-card-name">{player.name}</h3>
+    </div>
+  );
 }
 
 export default function LastSessionSection() {
@@ -42,6 +75,7 @@ export default function LastSessionSection() {
   const [miniGameCount, setMiniGameCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAllStats, setShowAllStats] = useState(false);
 
   useEffect(() => {
     api.sessions
@@ -61,68 +95,79 @@ export default function LastSessionSection() {
 
   const { session, summary } = detail;
   const mvpCards = buildMvpCards(summary);
+  const leaderFieldsByPlayer = computeSessionStatsLeaderFields(summary);
+  const statsRows = summary
+    .map((row) => ({
+      key: row.player._id,
+      player: row.player,
+      ...Object.fromEntries(RAW_STAT_KEYS.map((field) => [field, row.totals[field]])),
+      leaderFields: leaderFieldsByPlayer[row.player._id] || [],
+    }))
+    .sort((a, b) => b.wins - a.wins);
+  const visibleStatsRows = showAllStats ? statsRows : statsRows.slice(0, SESSION_STATS_PREVIEW_COUNT);
+  const hasMoreStatsRows = statsRows.length > SESSION_STATS_PREVIEW_COUNT;
 
   return (
-    <div className="page-container">
-      <section className="last-session-section">
-        <div className="last-session-header">
-          <h2 className="section-title">🏀 הסשן האחרון</h2>
-          <Link to={`/sessions/${session._id}`} className="last-session-link">
-            לעמוד הסשן ←
-          </Link>
-        </div>
-        <p className="last-session-meta">
-          {formatDate(session.date)} · {miniGameCount} משחקונים
-        </p>
-
-        {mvpCards.length > 0 ? (
-          <div className="mvp-row">
-            {mvpCards.map((card) => (
-              <Link key={card.key} to={`/players/${card.player._id}`} className="mvp-card">
-                <img
-                  className="mvp-card-photo"
-                  src={card.player.photo || 'https://placehold.co/120x120?text=No+Photo'}
-                  alt={card.player.name}
-                />
-                <div className="mvp-card-body">
-                  <h3 className="mvp-card-name">{card.player.name}</h3>
-                  <ul className="mvp-card-categories">
-                    {card.categories.map((c) => (
-                      <li key={c.field} className="mvp-card-category-line">
-                        <span className="mvp-card-emoji">{c.emoji}</span>
-                        {c.label} · {c.value}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Link>
-            ))}
+    <div className="last-session-band">
+      <div className="page-container">
+        <section className="last-session-section">
+          <div className="last-session-header">
+            <h2 className="section-title">🏀 הסשן האחרון</h2>
+            <Link to={`/sessions/${session._id}`} className="btn btn-sm btn-primary">
+              לעמוד הסשן ←
+            </Link>
           </div>
-        ) : (
-          <p className="last-session-empty">אין עדיין נתונים לסשן זה.</p>
-        )}
+          <p className="last-session-meta">
+            {formatDate(session.date)} · {miniGameCount} משחקונים
+          </p>
 
-        {summary.length > 0 && (
-          <div className="last-session-stats">
-            <h3 className="last-session-stats-title">סטטיסטיקות הסשן</h3>
-            <StatsTable
-              rows={summary.map((row) => ({
-                key: row.player._id,
-                player: row.player,
-                points: row.totals.points,
-                assists: row.totals.assists,
-                rebounds: row.totals.rebounds,
-                steals: row.totals.steals,
-                turnovers: row.totals.turnovers,
-                wins: row.totals.wins,
-              }))}
-              columns={SESSION_STATS_COLUMNS}
-              wrapClassName="last-session-stats-scroll"
-              highlightLeaders
-            />
-          </div>
-        )}
-      </section>
+          {mvpCards.length > 0 ? (
+            <div className="mvp-row">
+              {mvpCards.map((card) => (
+                <Link key={card.key} to={`/players/${card.player._id}`} className="mvp-card">
+                  <MvpBanner player={card.player} />
+                  <div className="mvp-card-body">
+                    <ul className="mvp-card-categories">
+                      {card.categories.map((c) => (
+                        <li key={c.field} className="mvp-card-category-line">
+                          <span className="mvp-card-emoji">{c.emoji}</span>
+                          {c.label} · {c.value}
+                          {c.isFirstCareer && <span className="mvp-card-first-career"> · לראשונה בקריירה</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="last-session-empty">אין עדיין נתונים לסשן זה.</p>
+          )}
+
+          {summary.length > 0 && (
+            <div className="last-session-stats">
+              <div className="last-session-stats-title-row">
+                <h3 className="last-session-stats-title">סטטיסטיקות הסשן</h3>
+                {hasMoreStatsRows && (
+                  <button
+                    type="button"
+                    className="last-session-stats-show-all"
+                    onClick={() => setShowAllStats((prev) => !prev)}
+                  >
+                    {showAllStats ? 'הצג פחות' : 'הצג הכל'}
+                  </button>
+                )}
+              </div>
+              <StatsTable
+                rows={visibleStatsRows}
+                columns={SESSION_STATS_COLUMNS}
+                wrapClassName="last-session-stats-scroll"
+                getRowLeaderFields={(row) => row.leaderFields}
+              />
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

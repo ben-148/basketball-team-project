@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { api } from '../api/client.js';
-import PlayerCard from '../components/PlayerCard.jsx';
-import LastSessionSection from '../components/LastSessionSection.jsx';
+import { useEffect, useState } from "react";
+import { api } from "../api/client.js";
+import PlayerCard from "../components/PlayerCard.jsx";
+import LastSessionSection from "../components/LastSessionSection.jsx";
 
 export default function Home() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     api.players
@@ -20,11 +20,11 @@ export default function Home() {
     <div>
       <section className="hero">
         <div className="hero-content">
-          <p className="hero-eyebrow">Welcome to the</p>
+          <p className="hero-eyebrow">THIS IS</p>
           <h1 className="hero-title">
             RASKO <span className="text-accent">BALL</span>
           </h1>
-          <p className="hero-tagline">Hustle. Heart. Hoops.</p>
+          <p className="hero-tagline">SPORT. NEIGHBORHOOD. FRIENDSHIP.</p>
         </div>
       </section>
 

@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { formatDate } from "../utils/date.js";
-import { TEAMS, BENCH, STAT_FIELDS } from "../constants.js";
+import { TEAMS, BENCH } from "../constants.js";
+import { STAT_COLUMNS } from "../config/statConfig.js";
 import MiniGameSummaryLine from "../components/MiniGameSummaryLine.jsx";
 import StatsTable from "../components/StatsTable.jsx";
 
-const MINIGAME_TABLE_FIELDS = STAT_FIELDS.filter(([field]) => field !== "wins");
-const SUMMARY_COLUMNS = ['player', 'points', 'assists', 'rebounds', 'steals', 'turnovers', 'gamesPlayed', 'wins', 'benchCount'];
+const MINIGAME_TABLE_FIELDS = STAT_COLUMNS.filter((c) => c.key !== "wins" && c.key !== "awards");
+const SUMMARY_COLUMNS = ['player', ...STAT_COLUMNS.map((c) => c.key).filter((k) => k !== 'awards'), 'gamesPlayed', 'benchCount'];
 
 export default function SessionDetail() {
   const { id } = useParams();
@@ -75,8 +76,8 @@ export default function SessionDetail() {
                           <thead>
                             <tr>
                               <th>Player</th>
-                              {MINIGAME_TABLE_FIELDS.map(([field, label]) => (
-                                <th key={field}>{label}</th>
+                              {MINIGAME_TABLE_FIELDS.map(({ key, label }) => (
+                                <th key={key}>{label}</th>
                               ))}
                             </tr>
                           </thead>
@@ -84,8 +85,8 @@ export default function SessionDetail() {
                             {mg.teams[team].map((row) => (
                               <tr key={row.player._id}>
                                 <td>{row.player.name}</td>
-                                {MINIGAME_TABLE_FIELDS.map(([field]) => (
-                                  <td key={field}>{row.stats[field]}</td>
+                                {MINIGAME_TABLE_FIELDS.map(({ key }) => (
+                                  <td key={key}>{row.stats[key]}</td>
                                 ))}
                               </tr>
                             ))}

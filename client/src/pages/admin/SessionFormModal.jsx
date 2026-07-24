@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client.js';
-import { toastSuccess, toastInfo, toastError } from '../../utils/toast.jsx';
+import { toastSuccess, toastInfo, toastError, toastWarning } from '../../utils/toast.jsx';
 import { MIN_SESSION_ROSTER_SIZE } from '../../constants.js';
-
-function getInitials(name) {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
+import { getInitials } from '../../utils/avatar.js';
 
 function PlayerAvatar({ player }) {
   return player.photo ? (
@@ -34,6 +29,7 @@ export default function SessionFormModal({ players, mode, session, lockedPlayerI
   const [notes, setNotes] = useState(() => (isEdit ? session.notes || '' : ''));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [existingDates, setExistingDates] = useState(new Set());
 
   useEffect(() => {
     function handleKey(e) {
@@ -42,6 +38,25 @@ export default function SessionFormModal({ players, mode, session, lockedPlayerI
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  // Only relevant when creating — editing a session's own date against itself isn't a conflict.
+  useEffect(() => {
+    if (isEdit) return;
+    api.sessions
+      .list()
+      .then((sessions) => setExistingDates(new Set(sessions.map((s) => s.date.slice(0, 10)))))
+      .catch(() => {});
+  }, [isEdit]);
+
+  const isDuplicateDate = !isEdit && date !== '' && existingDates.has(date);
+
+  function handleDateChange(e) {
+    const value = e.target.value;
+    setDate(value);
+    if (!isEdit && value && existingDates.has(value)) {
+      toastWarning('כבר קיים סשן בתאריך זה');
+    }
+  }
 
   function togglePlayer(id) {
     if (lockedSet.has(id)) return;
@@ -54,6 +69,10 @@ export default function SessionFormModal({ players, mode, session, lockedPlayerI
   async function handleSubmit() {
     if (!date) {
       setError('נא לבחור תאריך');
+      return;
+    }
+    if (isDuplicateDate) {
+      setError('כבר קיים סשן בתאריך זה');
       return;
     }
     setError('');
@@ -138,8 +157,9 @@ export default function SessionFormModal({ players, mode, session, lockedPlayerI
             <div className="form">
               <label>
                 תאריך
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                <input type="date" value={date} onChange={handleDateChange} required />
               </label>
+              {isDuplicateDate && <p className="error-text">כבר קיים סשן בתאריך זה</p>}
               <label>
                 הערות (אופציונלי)
                 <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
@@ -150,7 +170,7 @@ export default function SessionFormModal({ players, mode, session, lockedPlayerI
               <button type="button" className="btn" onClick={() => setStep(1)}>
                 ← חזרה
               </button>
-              <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSubmit}>
+              <button type="button" className="btn btn-primary" disabled={saving || isDuplicateDate} onClick={handleSubmit}>
                 {saving ? 'שומר...' : isEdit ? 'שמור שינויים ✓' : 'צור סשן ✓'}
               </button>
             </div>

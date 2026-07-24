@@ -117,6 +117,10 @@ export default function AdminImport() {
       setError('נא לבחור תאריך');
       return;
     }
+    if (dateWarning) {
+      setError('כבר קיים משחק בתאריך זה במערכת');
+      return;
+    }
     setError('');
     setImporting(true);
     try {
@@ -293,7 +297,7 @@ export default function AdminImport() {
             <button type="button" className="btn" onClick={resetImport}>
               בטל
             </button>
-            <button type="button" className="btn btn-primary" disabled={importing} onClick={handleConfirm}>
+            <button type="button" className="btn btn-primary" disabled={importing || dateWarning} onClick={handleConfirm}>
               {importing ? 'מייבא...' : 'ייבא נתונים ✓'}
             </button>
           </div>

@@ -2,24 +2,28 @@ import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import StatValue from './StatValue.jsx';
 import { useSortableTable } from '../hooks/useSortableTable.js';
-import { STAT_FIELDS, BENCH } from '../constants.js';
+import { BENCH } from '../constants.js';
+import { STAT_COLUMNS as STAT_CONFIG, STAR_STAT_KEYS, TROPHY_STAT_KEY, getStatValueField } from '../config/statConfig.js';
 import { formatDate } from '../utils/date.js';
 
 const STAT_COLUMNS = Object.fromEntries(
-  STAT_FIELDS.map(([field, label]) => [
-    field,
-    {
-      label,
-      getValue: (row) => (typeof row[field] === 'number' ? row[field] : -1),
-      render: (row) => <StatValue value={row[field]} />,
-    },
-  ])
+  STAT_CONFIG.map(({ key, label }) => {
+    const valueField = getStatValueField(key);
+    return [
+      key,
+      {
+        label,
+        getValue: (row) => (typeof row[valueField] === 'number' ? row[valueField] : -1),
+        render: (row) => <StatValue value={row[valueField]} />,
+      },
+    ];
+  })
 );
 
 // Columns eligible for a leader indicator when `highlightLeaders` is on — star fields get ⭐,
-// the wins field gets 🏆. Turnovers, gamesPlayed, benchCount etc. never get one.
-const STAR_FIELDS = ['points', 'rebounds', 'assists', 'steals'];
-const TROPHY_FIELD = 'wins';
+// the wins field gets 🏆. Turnovers, gamesPlayed, benchCount, awards etc. never get one.
+const STAR_FIELDS = STAR_STAT_KEYS;
+const TROPHY_FIELD = TROPHY_STAT_KEY;
 
 function computeLeaderValues(rows) {
   const leaders = {};

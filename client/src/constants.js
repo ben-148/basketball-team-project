@@ -10,8 +10,8 @@ export const MIN_SESSION_ROSTER_SIZE = 6;
 
 export const STAT_FIELDS = [
   ['points', 'נקודות'],
-  ['rebounds', 'ריבאונד'],
-  ['assists', 'אסיסט'],
+  ['rebounds', 'ריבאונדים'],
+  ['assists', 'אסיסטים'],
   ['steals', 'חטיפות'],
   ['turnovers', 'איבודים'],
   ['wins', 'נצחונות'],

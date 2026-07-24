@@ -75,6 +75,11 @@ router.post(
       return res.status(400).json({ error: 'rows must be a non-empty array' });
     }
 
+    const duplicate = await Game.findOne({ date: new Date(date) });
+    if (duplicate) {
+      return res.status(400).json({ error: 'כבר קיים משחק בתאריך זה במערכת' });
+    }
+
     const game = await Game.create({ date: new Date(date) });
 
     const skipped = [];

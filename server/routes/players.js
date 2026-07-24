@@ -12,6 +12,7 @@ import Video from '../models/Video.js';
 import { BENCH } from '../constants.js';
 import { createStatTotals } from '../utils/statTotals.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { computeCareerAchievements } from '../utils/achievements.js';
 
 // Categories eligible for a session-log leader indicator — matches the client's star (⭐) /
 // trophy (🏆) fields. Turnovers is intentionally excluded.
@@ -98,6 +99,93 @@ async function computeLegacyLeaderFields(playerId, gameIds) {
   return result;
 }
 
+// Career totals + הצטיינויות count for every player — the shared basis for both the /leaderboard
+// listing and the per-player rank badges on the player page.
+async function computeLeaderboardRows() {
+  const players = await Player.find().sort({ name: 1 });
+  const legacyDocs = await PlayerGameStats.find().populate('game');
+  const miniGameDocs = await PlayerMiniGameStats.find().populate({
+    path: 'miniGame',
+    populate: { path: 'session' },
+  });
+  const { achievementsCount } = await computeCareerAchievements();
+
+  const rowsByPlayer = new Map(
+    players.map((p) => [
+      p._id.toString(),
+      {
+        player: p,
+        statTotals: createStatTotals(),
+        gamesPlayed: 0,
+        benchCount: 0,
+      },
+    ])
+  );
+
+  for (const s of legacyDocs) {
+    if (!s.game) continue;
+    const row = rowsByPlayer.get(s.player.toString());
+    if (!row) continue;
+    row.gamesPlayed += 1;
+    row.statTotals.add(s);
+  }
+
+  for (const s of miniGameDocs) {
+    if (!s.miniGame || !s.miniGame.session) continue;
+    const row = rowsByPlayer.get(s.player.toString());
+    if (!row) continue;
+    if (s.team === BENCH) {
+      row.benchCount += 1;
+      continue;
+    }
+    row.gamesPlayed += 1;
+    row.statTotals.add(s);
+  }
+
+  return Array.from(rowsByPlayer.values()).map((row) => ({
+    player: row.player,
+    totals: row.statTotals.finalize(row.gamesPlayed),
+    gamesPlayed: row.gamesPlayed,
+    benchCount: row.benchCount,
+    achievements: achievementsCount.get(row.player._id.toString()) || 0,
+  }));
+}
+
+// Categories the player page shows a rank badge for.
+const RANK_FIELDS = ['points', 'rebounds', 'assists', 'steals', 'wins', 'achievements'];
+
+function rankValue(row, field) {
+  return (field === 'achievements' ? row.achievements : row.totals[field]) || 0;
+}
+
+// Competition ranking (1224-style): equal values share the same rank, and the next distinct
+// value's rank equals its position in the sorted list (so a tie for #1 is followed by #3).
+function computeRanksForField(rows, field) {
+  const sorted = [...rows].sort((a, b) => rankValue(b, field) - rankValue(a, field));
+  const ranks = new Map();
+  let rank = 0;
+  let lastValue = null;
+  let position = 0;
+  for (const row of sorted) {
+    position += 1;
+    const value = rankValue(row, field);
+    if (value !== lastValue) {
+      rank = position;
+      lastValue = value;
+    }
+    ranks.set(row.player._id.toString(), rank);
+  }
+  return ranks;
+}
+
+function computeRanksForPlayer(rows, playerId) {
+  const ranks = {};
+  for (const field of RANK_FIELDS) {
+    ranks[field] = computeRanksForField(rows, field).get(playerId) ?? null;
+  }
+  return ranks;
+}
+
 const router = express.Router();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -133,53 +221,7 @@ router.get('/', async (req, res) => {
 
 // Career totals for every player, merging legacy PlayerGameStats and new PlayerMiniGameStats.
 router.get('/leaderboard', async (req, res) => {
-  const players = await Player.find().sort({ name: 1 });
-  const legacyDocs = await PlayerGameStats.find().populate('game');
-  const miniGameDocs = await PlayerMiniGameStats.find().populate({
-    path: 'miniGame',
-    populate: { path: 'session' },
-  });
-
-  const rowsByPlayer = new Map(
-    players.map((p) => [
-      p._id.toString(),
-      {
-        player: p,
-        statTotals: createStatTotals(),
-        gamesPlayed: 0,
-        benchCount: 0,
-      },
-    ])
-  );
-
-  for (const s of legacyDocs) {
-    if (!s.game) continue;
-    const row = rowsByPlayer.get(s.player.toString());
-    if (!row) continue;
-    row.gamesPlayed += 1;
-    row.statTotals.add(s);
-  }
-
-  for (const s of miniGameDocs) {
-    if (!s.miniGame || !s.miniGame.session) continue;
-    const row = rowsByPlayer.get(s.player.toString());
-    if (!row) continue;
-    if (s.team === BENCH) {
-      row.benchCount += 1;
-      continue;
-    }
-    row.gamesPlayed += 1;
-    row.statTotals.add(s);
-  }
-
-  res.json(
-    Array.from(rowsByPlayer.values()).map((row) => ({
-      player: row.player,
-      totals: row.statTotals.finalize(row.gamesPlayed),
-      gamesPlayed: row.gamesPlayed,
-      benchCount: row.benchCount,
-    }))
-  );
+  res.json(await computeLeaderboardRows());
 });
 
 router.get('/:id', async (req, res) => {
@@ -243,21 +285,25 @@ router.get('/:id', async (req, res) => {
     gamesPlayed += 1;
     statTotals.add(row);
   }
-  const lifetime = statTotals.finalize(gamesPlayed);
-  lifetime.gamesPlayed = gamesPlayed;
-  lifetime.benchCount = benchCount;
-
   const videos = await Video.find({ player: player._id }).sort({ createdAt: -1 });
 
   const sessionIds = [...new Set(miniGameRows.map((r) => r.sessionId.toString()))];
   const gameIds = [...new Set(legacyRows.map((r) => r.gameId.toString()))];
   const playerId = player._id.toString();
-  const [sessionLeaders, legacyLeaders] = await Promise.all([
+  const [sessionLeaders, legacyLeaders, leaderboardRows] = await Promise.all([
     computeSessionLeaderFields(playerId, sessionIds),
     computeLegacyLeaderFields(playerId, gameIds),
+    computeLeaderboardRows(),
   ]);
 
-  res.json({ player, lifetime, gameLog, videos, sessionLeaders, legacyLeaders });
+  const lifetime = statTotals.finalize(gamesPlayed);
+  lifetime.gamesPlayed = gamesPlayed;
+  lifetime.benchCount = benchCount;
+  lifetime.achievements = leaderboardRows.find((r) => r.player._id.toString() === playerId)?.achievements || 0;
+
+  const ranks = computeRanksForPlayer(leaderboardRows, playerId);
+
+  res.json({ player, lifetime, gameLog, videos, sessionLeaders, legacyLeaders, ranks });
 });
 
 // Uploads a photo file to local disk and returns its URL — the admin form then saves that URL
