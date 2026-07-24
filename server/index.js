@@ -12,6 +12,7 @@ import sessionsRouter from './routes/sessions.js';
 import miniGamesRouter from './routes/miniGames.js';
 import miniGameStatsRouter from './routes/miniGameStats.js';
 import importRouter from './routes/import.js';
+import pendingPlayersRouter from './routes/pendingPlayers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +30,7 @@ app.use('/api/sessions', sessionsRouter);
 app.use('/api/minigames', miniGamesRouter);
 app.use('/api/mini-game-stats', miniGameStatsRouter);
 app.use('/api/import', importRouter);
+app.use('/api/pending-players', pendingPlayersRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

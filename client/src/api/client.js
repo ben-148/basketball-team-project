@@ -99,4 +99,11 @@ export const api = {
       request('/import/aliases', { method: 'POST', body: JSON.stringify({ alias, playerId }) }),
     removeAlias: (id) => request(`/import/aliases/${id}`, { method: 'DELETE' }),
   },
+  pendingPlayers: {
+    forGame: (gameId) => request(`/pending-players/game/${gameId}`),
+    assign: (id, playerId) =>
+      request(`/pending-players/${id}/assign`, { method: 'POST', body: JSON.stringify({ playerId }) }),
+    createAndAssign: (id, name) =>
+      request(`/pending-players/${id}/create-and-assign`, { method: 'POST', body: JSON.stringify({ name }) }),
+  },
 };

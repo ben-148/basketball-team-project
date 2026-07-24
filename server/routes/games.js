@@ -1,6 +1,7 @@
 import express from 'express';
 import Game from '../models/Game.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
+import PendingPlayer from '../models/PendingPlayer.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
@@ -42,6 +43,7 @@ router.delete('/:id', async (req, res) => {
   const game = await Game.findByIdAndDelete(req.params.id);
   if (!game) return res.status(404).json({ error: 'Game not found' });
   await PlayerGameStats.deleteMany({ game: game._id });
+  await PendingPlayer.deleteMany({ game: game._id });
   res.json({ success: true });
 });
 

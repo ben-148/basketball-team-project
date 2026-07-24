@@ -4,13 +4,10 @@ import { api } from '../../api/client.js';
 import { TEAMS, STAT_FIELDS } from '../../constants.js';
 import { toastSuccess, toastError, toastInfo, toastConfirm } from '../../utils/toast.jsx';
 
-// Unlike mini-games, legacy sessions have no "finish" step that auto-awards wins — wins here is
-// just another raw stat field the admin edits directly, same as points/rebounds/etc.
-const LEGACY_TABLE_FIELDS = STAT_FIELDS;
-
-function teamButtonClass(team) {
-  return team === TEAMS[0] ? 'team-btn-rasko' : 'team-btn-shoshanat';
-}
+// Legacy games predate the two-team mini-game structure — every assigned player is stored under
+// a team internally (schema requirement), but the admin never chooses one: everyone lands on
+// TEAMS[0] and the UI shows one flat roster, not team columns.
+const DEFAULT_TEAM = TEAMS[0];
 
 export default function AdminLegacySessionDetail() {
   const { gameId } = useParams();
@@ -18,8 +15,13 @@ export default function AdminLegacySessionDetail() {
 
   const [game, setGame] = useState(null);
   const [form, setForm] = useState({ date: '', location: '', notes: '' });
-  const [teams, setTeams] = useState({ [TEAMS[0]]: [], [TEAMS[1]]: [] });
+  const [roster, setRoster] = useState([]);
   const [unassigned, setUnassigned] = useState([]);
+  const [players, setPlayers] = useState([]);
+  const [guests, setGuests] = useState([]);
+  const [guestAssignSelections, setGuestAssignSelections] = useState({});
+  const [guestNewNames, setGuestNewNames] = useState({});
+  const [guestBusyId, setGuestBusyId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -29,10 +31,15 @@ export default function AdminLegacySessionDetail() {
     api.legacyStats
       .forGame(gameId)
       .then((data) => {
-        setTeams(data.teams);
+        const flat = Object.values(data.teams).flat().sort((a, b) => b.stats.points - a.stats.points);
+        setRoster(flat);
         setUnassigned(data.unassigned);
       })
       .catch((err) => setError(err.message));
+  }
+
+  function loadGuests() {
+    api.pendingPlayers.forGame(gameId).then(setGuests).catch(() => {});
   }
 
   useEffect(() => {
@@ -46,6 +53,8 @@ export default function AdminLegacySessionDetail() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
     loadRoster();
+    loadGuests();
+    api.players.list().then(setPlayers).catch(() => {});
   }, [gameId]);
 
   async function handleSaveDetails(e) {
@@ -64,11 +73,11 @@ export default function AdminLegacySessionDetail() {
     }
   }
 
-  async function handleAssign(playerId, team) {
+  async function handleAddPlayer(playerId) {
     setError('');
     setBusyKey(`assign-${playerId}`);
     try {
-      await api.legacyStats.assign(playerId, gameId, team);
+      await api.legacyStats.assign(playerId, gameId, DEFAULT_TEAM);
       loadRoster();
     } catch (err) {
       setError(err.message);
@@ -78,7 +87,7 @@ export default function AdminLegacySessionDetail() {
     }
   }
 
-  async function handleUnassign(playerId) {
+  async function handleRemovePlayer(playerId) {
     setError('');
     setBusyKey(`unassign-${playerId}`);
     try {
@@ -93,21 +102,60 @@ export default function AdminLegacySessionDetail() {
     }
   }
 
-  async function handleAdjust(playerId, team, field, delta) {
-    const row = teams[team].find((r) => r.player._id === playerId);
+  function handleStatInput(playerId, field, value) {
+    const num = Math.max(0, Number(value) || 0);
+    setRoster((prev) =>
+      prev.map((r) => (r.player._id === playerId ? { ...r, stats: { ...r.stats, [field]: num } } : r))
+    );
+  }
+
+  async function handleStatBlur(playerId) {
+    const row = roster.find((r) => r.player._id === playerId);
     if (!row) return;
-    const newStats = { ...row.stats, [field]: Math.max(0, row.stats[field] + delta) };
-
-    setTeams((prev) => ({
-      ...prev,
-      [team]: prev[team].map((r) => (r.player._id === playerId ? { ...r, stats: newStats } : r)),
-    }));
-
     try {
-      await api.legacyStats.save(playerId, gameId, newStats);
+      await api.legacyStats.save(playerId, gameId, row.stats);
     } catch (err) {
       toastError(err.message);
       loadRoster();
+    }
+  }
+
+  async function handleAssignGuest(guestId) {
+    const playerId = guestAssignSelections[guestId];
+    if (!playerId) {
+      toastError('נא לבחור שחקן');
+      return;
+    }
+    setGuestBusyId(guestId);
+    try {
+      await api.pendingPlayers.assign(guestId, playerId);
+      toastSuccess('שחקן שויך בהצלחה');
+      setGuests((prev) => prev.filter((g) => g._id !== guestId));
+      loadRoster();
+    } catch (err) {
+      toastError(err.message);
+    } finally {
+      setGuestBusyId(null);
+    }
+  }
+
+  async function handleCreateGuestPlayer(guestId, defaultName) {
+    const name = (guestNewNames[guestId] ?? defaultName).trim();
+    if (!name) {
+      toastError('נא להזין שם');
+      return;
+    }
+    setGuestBusyId(guestId);
+    try {
+      const result = await api.pendingPlayers.createAndAssign(guestId, name);
+      toastSuccess(`שחקן "${result.player.name}" נוצר ושויך`);
+      setGuests((prev) => prev.filter((g) => g._id !== guestId));
+      setPlayers((prev) => [...prev, result.player].sort((a, b) => a.name.localeCompare(b.name)));
+      loadRoster();
+    } catch (err) {
+      toastError(err.message);
+    } finally {
+      setGuestBusyId(null);
     }
   }
 
@@ -159,110 +207,161 @@ export default function AdminLegacySessionDetail() {
         </div>
       </form>
 
+      <h3 className="section-title">שחקנים</h3>
+
+      {roster.length === 0 ? (
+        <p className="team-column-empty">No players assigned yet.</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="stat-entry-compact-table">
+            <thead>
+              <tr>
+                <th>Player</th>
+                {STAT_FIELDS.map(([field, label]) => (
+                  <th key={field}>{label}</th>
+                ))}
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {roster.map((row) => (
+                <tr key={row.player._id}>
+                  <td className="stat-entry-player-cell">
+                    <img
+                      src={row.player.photo || 'https://placehold.co/60x60'}
+                      alt={row.player.name}
+                      className="stat-entry-photo-sm"
+                    />
+                    <span>{row.player.name}</span>
+                  </td>
+                  {STAT_FIELDS.map(([field]) => (
+                    <td key={field}>
+                      <input
+                        type="number"
+                        min="0"
+                        className="import-stat-input"
+                        value={row.stats[field] ?? 0}
+                        onChange={(e) => handleStatInput(row.player._id, field, e.target.value)}
+                        onBlur={() => handleStatBlur(row.player._id)}
+                      />
+                    </td>
+                  ))}
+                  <td>
+                    <button
+                      type="button"
+                      className="stat-entry-remove stat-entry-remove-sm"
+                      disabled={busyKey === `unassign-${row.player._id}`}
+                      onClick={() => handleRemovePlayer(row.player._id)}
+                      aria-label={`Remove ${row.player.name} from session`}
+                    >
+                      &times;
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {unassigned.length > 0 && (
         <div className="unassigned-panel">
-          <h3>Assign Players</h3>
+          <h3>הוסף שחקן</h3>
           <div className="unassigned-list">
             {unassigned.map((p) => (
               <div key={p._id} className="unassigned-chip">
                 <span>{p.name}</span>
-                <div className="team-btn-group">
-                  {TEAMS.map((team) => (
-                    <button
-                      key={team}
-                      type="button"
-                      className={`btn btn-sm ${teamButtonClass(team)}`}
-                      disabled={busyKey === `assign-${p._id}`}
-                      onClick={() => handleAssign(p._id, team)}
-                    >
-                      {team}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  disabled={busyKey === `assign-${p._id}`}
+                  onClick={() => handleAddPlayer(p._id)}
+                >
+                  הוסף +
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="stat-entry-columns">
-        {TEAMS.map((team) => (
-          <div key={team} className="stat-entry-column">
-            <h3 className="team-column-title">{team}</h3>
-            {teams[team].length === 0 ? (
-              <p className="team-column-empty">No players assigned yet.</p>
-            ) : (
-              <div className="table-wrap">
-                <table className="stat-entry-compact-table">
-                  <thead>
-                    <tr>
-                      <th>Player</th>
-                      {LEGACY_TABLE_FIELDS.map(([field, label]) => (
-                        <th key={field}>{label}</th>
-                      ))}
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teams[team].map((row) => (
-                      <tr key={row.player._id}>
-                        <td className="stat-entry-player-cell">
-                          <img
-                            src={row.player.photo || 'https://placehold.co/60x60'}
-                            alt={row.player.name}
-                            className="stat-entry-photo-sm"
-                          />
-                          <span>{row.player.name}</span>
-                        </td>
-                        {LEGACY_TABLE_FIELDS.map(([field, label]) => {
-                          const plusDelta = field === 'points' ? 2 : 1;
-                          const plusLabel = field === 'points' ? '+2' : '+';
-                          return (
-                            <td key={field}>
-                              <div className="stat-counter stat-counter-sm">
-                                <button
-                                  type="button"
-                                  className="stat-counter-btn stat-counter-btn-sm stat-counter-minus"
-                                  onClick={() => handleAdjust(row.player._id, team, field, -1)}
-                                  aria-label={`Decrease ${label} for ${row.player.name}`}
-                                >
-                                  &minus;
-                                </button>
-                                <span className="stat-counter-value stat-counter-value-sm">{row.stats[field]}</span>
-                                <button
-                                  type="button"
-                                  className={`stat-counter-btn stat-counter-btn-sm stat-counter-plus ${
-                                    field === 'points' ? 'stat-counter-plus-wide-sm' : ''
-                                  }`}
-                                  onClick={() => handleAdjust(row.player._id, team, field, plusDelta)}
-                                  aria-label={`Increase ${label} for ${row.player.name} by ${plusDelta}`}
-                                >
-                                  {plusLabel}
-                                </button>
-                              </div>
-                            </td>
-                          );
-                        })}
-                        <td>
-                          <button
-                            type="button"
-                            className="stat-entry-remove stat-entry-remove-sm"
-                            disabled={busyKey === `unassign-${row.player._id}`}
-                            onClick={() => handleUnassign(row.player._id)}
-                            aria-label={`Remove ${row.player.name} from session`}
-                          >
-                            &times;
-                          </button>
-                        </td>
-                      </tr>
+      {guests.length > 0 && (
+        <section className="pending-players-section">
+          <h3 className="section-title">👤 אורחים</h3>
+          <p className="legacy-guests-note">
+            שחקנים מהקובץ שלא זוהו כפרופיל קיים. אפשר לשייך אותם לשחקן קיים, ליצור עבורם פרופיל, או להשאיר
+            אותם כאורחים — הם לא נכללים בטבלת השחקנים, בליגה או בסטטיסטיקות הקריירה.
+          </p>
+          <div className="table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>שם בקובץ</th>
+                  {STAT_FIELDS.map(([field, label]) => (
+                    <th key={field}>{label}</th>
+                  ))}
+                  <th>שייך לשחקן קיים</th>
+                  <th>או צור שחקן חדש</th>
+                </tr>
+              </thead>
+              <tbody>
+                {guests.map((g) => (
+                  <tr key={g._id}>
+                    <td>{g.nameInFile}</td>
+                    {STAT_FIELDS.map(([field]) => (
+                      <td key={field}>{g[field] ?? 'N/A'}</td>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    <td>
+                      <div className="unmatched-row-actions">
+                        <select
+                          value={guestAssignSelections[g._id] || ''}
+                          onChange={(e) =>
+                            setGuestAssignSelections((prev) => ({ ...prev, [g._id]: e.target.value }))
+                          }
+                        >
+                          <option value="">בחר שחקן</option>
+                          {players.map((pl) => (
+                            <option key={pl._id} value={pl._id}>
+                              {pl.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary"
+                          disabled={guestBusyId === g._id}
+                          onClick={() => handleAssignGuest(g._id)}
+                        >
+                          שייך לשחקן קיים
+                        </button>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="new-player-inline">
+                        <input
+                          type="text"
+                          value={guestNewNames[g._id] ?? g.nameInFile}
+                          onChange={(e) =>
+                            setGuestNewNames((prev) => ({ ...prev, [g._id]: e.target.value }))
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary"
+                          disabled={guestBusyId === g._id}
+                          onClick={() => handleCreateGuestPlayer(g._id, g.nameInFile)}
+                        >
+                          צור שחקן חדש ✓
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </section>
+      )}
     </div>
   );
 }

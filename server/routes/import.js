@@ -3,6 +3,7 @@ import multer from 'multer';
 import Player from '../models/Player.js';
 import Game from '../models/Game.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
+import PendingPlayer from '../models/PendingPlayer.js';
 import { TEAMS } from '../constants.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractStatsFromPdf } from '../services/claudeExtraction.js';
@@ -88,6 +89,16 @@ router.post(
     for (const row of rows) {
       if (!row.playerId) {
         skipped.push(row.nameInFile);
+        await PendingPlayer.create({
+          game: game._id,
+          nameInFile: row.nameInFile,
+          points: row.points ?? null,
+          rebounds: row.rebounds ?? null,
+          assists: row.assists ?? null,
+          steals: row.steals ?? null,
+          turnovers: row.turnovers ?? null,
+          wins: row.wins ?? null,
+        });
         continue;
       }
       await PlayerGameStats.create({

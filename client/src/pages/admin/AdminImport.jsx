@@ -22,6 +22,7 @@ export default function AdminImport() {
   const [date, setDate] = useState('');
   const [dateWarning, setDateWarning] = useState(false);
   const [dateAutoDetected, setDateAutoDetected] = useState(false);
+  const [datePartial, setDatePartial] = useState(null); // { day, month } when only day/month were found
   const [importing, setImporting] = useState(false);
   const [successSummary, setSuccessSummary] = useState(null);
   const [error, setError] = useState('');
@@ -54,11 +55,13 @@ export default function AdminImport() {
         toastWarning(`${unmatchedCount} player${unmatchedCount > 1 ? 's' : ''} could not be matched — review before importing`);
       }
 
-      const detectedDate = parseDateFromFilename(file.name);
-      if (detectedDate) {
-        setDate(detectedDate);
+      const detected = parseDateFromFilename(file.name);
+      if (detected?.date) {
+        setDate(detected.date);
         setDateAutoDetected(true);
-        await checkDateDuplicate(detectedDate);
+        await checkDateDuplicate(detected.date);
+      } else if (detected) {
+        setDatePartial({ day: detected.day, month: detected.month });
       }
     } catch (err) {
       setError(err.message);
@@ -119,6 +122,7 @@ export default function AdminImport() {
     const value = e.target.value;
     setDate(value);
     setDateAutoDetected(false);
+    setDatePartial(null);
     if (!value) {
       setDateWarning(false);
       return;
@@ -158,6 +162,7 @@ export default function AdminImport() {
     setDate('');
     setDateWarning(false);
     setDateAutoDetected(false);
+    setDatePartial(null);
     setSuccessSummary(null);
     setError('');
   }
@@ -222,6 +227,12 @@ export default function AdminImport() {
             </label>
             {dateAutoDetected && !dateWarning && (
               <p className="import-date-detected-note">📅 תאריך זוהה משם הקובץ</p>
+            )}
+            {datePartial && (
+              <p className="import-date-detected-note">
+                📅 זוהה תאריך חלקי מהקובץ ({String(datePartial.day).padStart(2, '0')}/
+                {String(datePartial.month).padStart(2, '0')}) · נא להזין שנה
+              </p>
             )}
             {dateWarning && <p className="error-text">⚠️ כבר קיים משחק בתאריך זה במערכת</p>}
           </div>

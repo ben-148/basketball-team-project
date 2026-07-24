@@ -71,29 +71,51 @@ function MvpBanner({ player }) {
 }
 
 export default function LastSessionSection() {
-  const [detail, setDetail] = useState(null);
-  const [miniGameCount, setMiniGameCount] = useState(0);
+  const [entry, setEntry] = useState(null); // { type: 'session' | 'legacy', id, date, miniGameCount }
+  const [summary, setSummary] = useState(null);
+  const [guests, setGuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAllStats, setShowAllStats] = useState(false);
 
+  // "Last session" has to consider both collections — a legacy game imported today is just as
+  // much "the last session" as a brand-new mini-game session would be. Same merge-by-date
+  // pattern SessionsList.jsx uses for the /sessions page.
   useEffect(() => {
-    api.sessions
-      .list()
-      .then((sessions) => {
-        if (sessions.length === 0) return null;
-        const latest = sessions[0];
-        setMiniGameCount(latest.miniGameCount || 0);
-        return api.sessions.get(latest._id);
+    Promise.all([api.sessions.list(), api.games.list()])
+      .then(([sessions, games]) => {
+        const sessionEntries = sessions.map((s) => ({
+          type: 'session',
+          id: s._id,
+          date: s.date,
+          miniGameCount: s.miniGameCount,
+        }));
+        const legacyEntries = games.map((g) => ({ type: 'legacy', id: g._id, date: g.date }));
+        const merged = [...sessionEntries, ...legacyEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
+        if (merged.length === 0) return null;
+
+        const latest = merged[0];
+        setEntry(latest);
+        if (latest.type === 'session') {
+          return api.sessions.get(latest.id).then((data) => ({ summary: data.summary, guests: [] }));
+        }
+        // Only legacy games can have unresolved PendingPlayer ("guest") rows from a PDF import.
+        return Promise.all([
+          api.legacyStats.forGame(latest.id).then((data) => data.summary),
+          api.pendingPlayers.forGame(latest.id),
+        ]).then(([summaryData, guestRows]) => ({ summary: summaryData, guests: guestRows }));
       })
-      .then((data) => data && setDetail(data))
+      .then((result) => {
+        if (!result) return;
+        setSummary(result.summary);
+        setGuests(result.guests);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || error || !detail) return null;
+  if (loading || error || !entry || !summary) return null;
 
-  const { session, summary } = detail;
   const mvpCards = buildMvpCards(summary);
   const leaderFieldsByPlayer = computeSessionStatsLeaderFields(summary);
   const statsRows = summary
@@ -113,12 +135,16 @@ export default function LastSessionSection() {
         <section className="last-session-section">
           <div className="last-session-header">
             <h2 className="section-title">🏀 הסשן האחרון</h2>
-            <Link to={`/sessions/${session._id}`} className="btn btn-sm btn-primary">
+            <Link
+              to={entry.type === 'session' ? `/sessions/${entry.id}` : `/legacy-sessions/${entry.id}`}
+              className="btn btn-sm btn-primary"
+            >
               לעמוד הסשן ←
             </Link>
           </div>
           <p className="last-session-meta">
-            {formatDate(session.date)} · {miniGameCount} משחקונים
+            {formatDate(entry.date)} ·{' '}
+            {entry.type === 'session' ? `${entry.miniGameCount || 0} משחקונים` : 'סשן ישן (Legacy)'}
           </p>
 
           {mvpCards.length > 0 ? (
@@ -164,6 +190,22 @@ export default function LastSessionSection() {
                 wrapClassName="last-session-stats-scroll"
                 getRowLeaderFields={(row) => row.leaderFields}
               />
+            </div>
+          )}
+
+          {guests.length > 0 && (
+            <div className="last-session-guests">
+              <h3 className="last-session-guests-title">👤 אורחים</h3>
+              <ul className="last-session-guests-list">
+                {guests.map((g) => (
+                  <li key={g._id} className="last-session-guest-row">
+                    <span className="last-session-guest-name">👤 {g.nameInFile}</span>
+                    <span className="last-session-guest-stats">
+                      {RAW_STAT_KEYS.map((key) => `${getStatColumn(key).label} ${g[key] ?? 'N/A'}`).join(' · ')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </section>

@@ -3,24 +3,28 @@ import Player from '../models/Player.js';
 import PlayerGameStats from '../models/PlayerGameStats.js';
 import { TEAMS, STAT_FIELDS } from '../constants.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { computeCareerAchievements } from '../utils/achievements.js';
 
 const router = express.Router();
 
-// Returns the roster for a game split by team, plus players not yet assigned to either team.
-router.get('/game/:gameId', async (req, res) => {
-  const allPlayers = await Player.find().sort({ name: 1 });
-  const assigned = await PlayerGameStats.find({ game: req.params.gameId }).populate('player');
+// Returns the roster for a game split by team, plus players not yet assigned to either team, plus
+// a per-player `summary` (totals + firstCareerFields) in the same shape sessions.js's GET /:id
+// produces for regular sessions — legacy games get equal treatment for leader/achievement display
+// (e.g. the home page's "last session" section, which may land on either a session or a legacy game).
+router.get(
+  '/game/:gameId',
+  asyncHandler(async (req, res) => {
+    const allPlayers = await Player.find().sort({ name: 1 });
+    const assigned = await PlayerGameStats.find({ game: req.params.gameId }).populate('player');
 
-  const assignedIds = new Set(assigned.map((s) => s.player._id.toString()));
+    const assignedIds = new Set(assigned.map((s) => s.player._id.toString()));
 
-  const teams = {};
-  for (const team of TEAMS) teams[team] = [];
+    const teams = {};
+    for (const team of TEAMS) teams[team] = [];
 
-  for (const s of assigned) {
-    if (!teams[s.team]) continue;
-    teams[s.team].push({
-      player: s.player,
-      stats: {
+    const summaryMap = new Map();
+    for (const s of assigned) {
+      const stats = {
         _id: s._id,
         points: s.points,
         rebounds: s.rebounds,
@@ -28,14 +32,41 @@ router.get('/game/:gameId', async (req, res) => {
         steals: s.steals,
         turnovers: s.turnovers,
         wins: s.wins,
-      },
-    });
-  }
+      };
+      if (teams[s.team]) {
+        teams[s.team].push({ player: s.player, stats });
+      }
+      summaryMap.set(s.player._id.toString(), {
+        player: s.player,
+        totals: {
+          points: s.points ?? 0,
+          rebounds: s.rebounds ?? 0,
+          assists: s.assists ?? 0,
+          steals: s.steals ?? 0,
+          turnovers: s.turnovers ?? 0,
+          wins: s.wins ?? 0,
+        },
+        benchCount: 0,
+        gamesPlayed: 1,
+      });
+    }
 
-  const unassigned = allPlayers.filter((p) => !assignedIds.has(p._id.toString()));
+    const unassigned = allPlayers.filter((p) => !assignedIds.has(p._id.toString()));
 
-  res.json({ teams, unassigned });
-});
+    const summary = Array.from(summaryMap.values()).sort((a, b) => b.totals.points - a.totals.points);
+
+    const { firstAchievementKey, eventLeaderFields } = await computeCareerAchievements();
+    const eventKey = `legacy:${req.params.gameId}`;
+    const leadersThisEvent = eventLeaderFields.get(eventKey) || new Map();
+    for (const row of summary) {
+      const playerId = row.player._id.toString();
+      const ledFields = leadersThisEvent.get(playerId) || [];
+      row.firstCareerFields = ledFields.filter((f) => firstAchievementKey.get(`${playerId}:${f}`) === eventKey);
+    }
+
+    res.json({ teams, unassigned, summary });
+  })
+);
 
 // Assigns a player to a team for a game, creating a zeroed stat row if one doesn't exist yet.
 router.post('/assign', async (req, res) => {

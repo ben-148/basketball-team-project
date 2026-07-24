@@ -251,6 +251,7 @@ h4 {
   background: transparent;
   /* להסיר את הרקע האפור */
   color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-heading);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2.5px;
@@ -1642,6 +1643,67 @@ tr.row-status-none:hover {
   color: var(--color-text-muted);
   font-size: 0.9rem;
   margin-bottom: 1.25rem;
+}
+
+.pending-players-section {
+  margin-top: 2.5rem;
+}
+
+.legacy-guests-section {
+  margin-top: 2.5rem;
+}
+
+.legacy-guests-note {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.legacy-guests-table {
+  width: 100%;
+}
+
+.legacy-guest-row {
+  font-style: italic;
+  color: var(--color-text-dim);
+}
+
+.last-session-guests {
+  margin-top: 1rem;
+}
+
+.last-session-guests-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--color-text-dim);
+  margin: 0 0 0.4rem;
+}
+
+.last-session-guests-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.last-session-guest-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--color-text-dim);
+}
+
+.last-session-guest-name {
+  font-weight: 700;
+}
+
+.last-session-guest-stats {
+  color: var(--color-text-dim);
 }
 
 /* ---------- Toast Notifications ---------- */
